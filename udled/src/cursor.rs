@@ -103,23 +103,6 @@ impl<'a, 'input> Cursor<'a, 'input> {
             Err(err) => Err(err),
         }
     }
-
-    pub fn child_peek<F, R>(&mut self, peek: usize, mut func: F) -> Result<R, Error>
-    where
-        F: FnMut(Cursor<'_, 'input>) -> Result<R, Error>,
-    {
-        let mut next_idx = *self.next_idx + peek;
-
-        let child = Cursor {
-            next_idx: &mut next_idx,
-            buffer: self.buffer,
-        };
-
-        match func(child) {
-            Ok(ret) => Ok(ret),
-            Err(err) => Err(err),
-        }
-    }
 }
 
 #[cfg(test)]

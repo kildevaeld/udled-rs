@@ -164,7 +164,7 @@ impl Tokenizer for Str {
     }
 
     fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
-        Ok(Some(r#"""#) == reader.peek_ch())
+        reader.peek('"')
     }
 }
 
@@ -256,6 +256,10 @@ impl Tokenizer for LineComment {
             span: Span::new(start, end),
         })
     }
+
+    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
+        reader.peek("//")
+    }
 }
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -290,6 +294,10 @@ impl Tokenizer for MultiLineComment {
             value: &reader.input()[(start + 2)..reader.next_position() - 2],
             span: Span::new(start, reader.next_position()),
         })
+    }
+
+    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
+        reader.peek("/*")
     }
 }
 
@@ -343,17 +351,9 @@ impl Tokenizer for Int {
         ));
     }
 
-    // fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
-    //     Ok((reader.peek('-')?
-    //         && reader
-    //             .peek_chn(1)
-    //             .map(|m| m.is_ascii_digit())
-    //             .unwrap_or_default())
-    //         || reader
-    //             .peek_ch()
-    //             .map(|m| m.is_ascii_digit())
-    //             .unwrap_or_default())
-    // }
+    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
+        reader.peek((Opt('-'), Digit::default()))
+    }
 }
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -393,12 +393,18 @@ impl Tokenizer for EOF {
         }
     }
     fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
-        Ok(reader.peek_ch().is_none())
+        Ok(reader.eof())
     }
 }
 
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Digit(u32);
+#[derive(Debug, Clone, Copy)]
+pub struct Digit(pub u32);
+
+impl Default for Digit {
+    fn default() -> Self {
+        Digit(10)
+    }
+}
 
 impl Tokenizer for Digit {
     type Token<'a> = u32;
@@ -432,7 +438,7 @@ where
     type Token<'a> = Option<T::Token<'a>>;
 
     fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
-        Ok(self.0.to_token(reader).ok())
+        Ok(reader.parse(&self.0).ok())
     }
 
     fn peek<'a>(&self, _reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
@@ -550,7 +556,7 @@ macro_rules! tokenizer {
             type Token<'a> = $first::Token<'a>;
 
             fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
-                self.0.to_token(reader)
+                reader.parse(&self.0)
             }
 
             fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
@@ -630,5 +636,13 @@ mod test {
             input.parse(LineComment).unwrap(),
             Lex::new(" Some tekst", Span::new(0, 13))
         );
+    }
+
+    #[test]
+    fn opt() {
+        let mut input = Input::new("WS");
+        assert_eq!(input.parse(Opt("He")).unwrap(), None,);
+        assert_eq!(input.position(), 0);
+        assert_eq!(input.peek_ch(), Some("W"));
     }
 }
