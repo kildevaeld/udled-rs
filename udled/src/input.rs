@@ -153,18 +153,6 @@ impl<'a, 'b> Reader<'a, 'b> {
         })
     }
 
-    pub fn peekn<T: Tokenizer>(&mut self, peek: usize, tokenizer: T) -> Result<bool, Error> {
-        self.cursor.child_peek(peek, |cursor| {
-            let mut reader = Reader {
-                cursor,
-                line_no: self.line_no,
-                col_no: self.col_no,
-            };
-
-            tokenizer.peek(&mut reader)
-        })
-    }
-
     pub fn eof(&self) -> bool {
         self.cursor.eof()
     }
