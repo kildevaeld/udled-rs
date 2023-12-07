@@ -109,6 +109,16 @@ impl Tokenizer for char {
             _ => return Err(reader.error(format!("expected '{}'", self))),
         }
     }
+
+    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
+        let Some(next) = reader.peek_ch() else {
+            return Ok(false);
+        };
+        match next.chars().next() {
+            Some(next) if next == *self => Ok(true),
+            _ => return Ok(false),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, Default)]
