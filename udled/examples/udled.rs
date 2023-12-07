@@ -22,6 +22,8 @@ pub struct Expr;
 fn main() -> Result<(), Error> {
     let mut input = Input::new(r#"let /* test */  "Hello, World!" ost // Line comment"#);
 
+    println!("PEEK {:?}", input.peek("let"));
+
     let ret = input.parse(("let", WS, Str))?;
 
     println!("ret: {:#?}", ret);

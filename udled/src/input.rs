@@ -142,7 +142,7 @@ impl<'a, 'b> Reader<'a, 'b> {
     }
 
     pub fn peek<T: Tokenizer>(&mut self, tokenizer: T) -> Result<bool, Error> {
-        self.cursor.child(|cursor| {
+        self.cursor.child_peek(|cursor| {
             let mut reader = Reader {
                 cursor,
                 line_no: self.line_no,

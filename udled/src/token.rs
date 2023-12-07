@@ -92,6 +92,18 @@ impl<'lit> Tokenizer for &'lit str {
             end: reader.next_position(),
         })
     }
+
+    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
+        let tokens = self.graphemes(true);
+        for (idx, next) in tokens.enumerate() {
+            if Some(next) == reader.peek_chn(idx) {
+                continue;
+            }
+            return Ok(false);
+        }
+
+        Ok(true)
+    }
 }
 
 impl Tokenizer for char {
