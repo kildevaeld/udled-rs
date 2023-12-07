@@ -483,6 +483,34 @@ where
 }
 
 #[derive(Debug, Clone, Copy)]
+pub struct OneOrMany<T>(pub T);
+
+impl<T> Tokenizer for OneOrMany<T>
+where
+    T: Tokenizer,
+{
+    type Token<'a> = Vec<T::Token<'a>>;
+    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
+        let mut output = vec![reader.parse(&self.0)?];
+
+        loop {
+            let next = match reader.parse(&self.0) {
+                Ok(next) => next,
+                Err(_) => break,
+            };
+
+            output.push(next);
+        }
+
+        Ok(output)
+    }
+
+    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
+        reader.peek(&self.0)
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
 pub struct Many<T>(pub T);
 
 impl<T> Tokenizer for Many<T>
@@ -505,8 +533,8 @@ where
         Ok(output)
     }
 
-    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
-        reader.peek(&self.0)
+    fn peek<'a>(&self, _reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
+        Ok(true)
     }
 }
 
