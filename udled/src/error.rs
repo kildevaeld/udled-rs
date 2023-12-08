@@ -1,6 +1,7 @@
+use alloc::{borrow::Cow, vec::Vec};
 use core::fmt;
 
-use alloc::{borrow::Cow, vec::Vec};
+pub type Result<T> = core::result::Result<T, Error>;
 
 #[derive(Debug)]
 pub struct Error {

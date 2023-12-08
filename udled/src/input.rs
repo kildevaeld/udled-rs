@@ -2,7 +2,7 @@ use alloc::{borrow::Cow, vec::Vec};
 
 use crate::{
     cursor::{Buffer, Cursor},
-    error::Error,
+    error::{Error, Result},
     token::Tokenizer,
 };
 
@@ -46,7 +46,7 @@ impl<'a> Input<'a> {
         self.buffer.get(self.next_idx).map(|m| m.1)
     }
 
-    pub fn peek<T: Tokenizer>(&mut self, tokenizer: T) -> Result<bool, Error> {
+    pub fn peek<T: Tokenizer>(&mut self, tokenizer: T) -> Result<bool> {
         let mut next_idx = self.next_idx;
         tokenizer.peek(&mut Reader {
             cursor: Cursor::new(&self.buffer, &mut next_idx),
@@ -55,7 +55,7 @@ impl<'a> Input<'a> {
         })
     }
 
-    pub fn parse<T: Tokenizer>(&mut self, tokenizer: T) -> Result<T::Token<'a>, Error> {
+    pub fn parse<T: Tokenizer>(&mut self, tokenizer: T) -> Result<T::Token<'a>> {
         let mut next_idx = self.next_idx;
 
         let mut reader = Reader {
@@ -74,6 +74,11 @@ impl<'a> Input<'a> {
         Ok(token)
     }
 
+    pub fn eat<T: Tokenizer>(&mut self, tokenizer: T) -> Result<()> {
+        let _ = self.parse(tokenizer)?;
+        Ok(())
+    }
+
     pub fn slice(&self) -> &'a str {
         self.buffer.slice()
     }
@@ -90,7 +95,7 @@ pub struct Reader<'a, 'b> {
 }
 
 impl<'a, 'b> Reader<'a, 'b> {
-    pub fn eat_ch(&mut self) -> Result<&'b str, Error> {
+    pub fn eat_ch(&mut self) -> Result<&'b str> {
         let Some((_, ch)) = self.cursor.eat() else {
             return Err(Error::new("eof", self.line_no, self.col_no));
         };
@@ -141,7 +146,7 @@ impl<'a, 'b> Reader<'a, 'b> {
         self.cursor.peekn(peek).map(|m| m.1)
     }
 
-    pub fn peek<T: Tokenizer>(&mut self, tokenizer: T) -> Result<bool, Error> {
+    pub fn peek<T: Tokenizer>(&mut self, tokenizer: T) -> Result<bool> {
         self.cursor.child_peek(|cursor| {
             let mut reader = Reader {
                 cursor,
@@ -157,7 +162,7 @@ impl<'a, 'b> Reader<'a, 'b> {
         self.cursor.eof()
     }
 
-    pub fn parse<T: Tokenizer>(&mut self, tokenizer: T) -> Result<T::Token<'b>, Error> {
+    pub fn parse<T: Tokenizer>(&mut self, tokenizer: T) -> Result<T::Token<'b>> {
         self.cursor.child(|cursor| {
             let mut reader = Reader {
                 cursor,
@@ -174,7 +179,7 @@ impl<'a, 'b> Reader<'a, 'b> {
         })
     }
 
-    pub fn eat<T: Tokenizer>(&mut self, tokenizer: T) -> Result<(), Error> {
+    pub fn eat<T: Tokenizer>(&mut self, tokenizer: T) -> Result<()> {
         let _ = self.parse(tokenizer)?;
         Ok(())
     }
