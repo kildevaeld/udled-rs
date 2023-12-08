@@ -374,7 +374,19 @@ impl Tokenizer for Int {
     }
 
     fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
-        reader.peek((Opt('-'), Digit::default()))
+        let Some(mut ch) = reader.peek_ch() else {
+            return Ok(false);
+        };
+
+        if ch == "-" {
+            let Some(next) = reader.peek_chn(1) else {
+                return Ok(false);
+            };
+
+            ch = next;
+        }
+
+        Ok(ch.is_digit(10))
     }
 }
 
