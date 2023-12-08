@@ -606,7 +606,7 @@ macro_rules! any {
             let e = $first;
             $(
                 let e = Or(e, $rest);
-            ),*
+            )*
             e
         }
     }
