@@ -197,7 +197,7 @@ impl Tokenizer for Ident {
     type Token<'a> = Lex<'a>;
 
     fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
-        let start_idx = reader.position() + 1;
+        let start_idx = reader.next_position();
 
         let mut end_idx = start_idx;
 
