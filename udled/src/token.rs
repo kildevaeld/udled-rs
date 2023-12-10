@@ -408,7 +408,7 @@ impl Tokenizer for Bool {
     }
 
     fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
-        Ok(reader.peek_ch() == Some("t") || reader.peek_ch() == Some("f"))
+        Ok(reader.peek("true")? || reader.peek("false")?)
     }
 }
 
