@@ -79,7 +79,12 @@ impl<'lit> Tokenizer for &'lit str {
         for token in tokens {
             let next = reader.eat_ch()?;
             if token != next {
-                return Err(Error::new(self.to_string(), line_no, col_no));
+                return Err(Error::new(
+                    self.to_string(),
+                    reader.position(),
+                    line_no,
+                    col_no,
+                ));
             }
         }
 
@@ -505,6 +510,7 @@ where
 
         Err(Error::new_with(
             "either",
+            reader.position(),
             line_no,
             col_no,
             vec![left_err, right_err],

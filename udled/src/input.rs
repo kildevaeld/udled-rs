@@ -84,7 +84,7 @@ impl<'a> Input<'a> {
     }
 
     pub fn error(&self, message: impl Into<Cow<'static, str>>) -> Error {
-        Error::new(message, self.line_no, self.col_no)
+        Error::new(message, self.position(), self.line_no, self.col_no)
     }
 }
 
@@ -97,7 +97,12 @@ pub struct Reader<'a, 'b> {
 impl<'a, 'b> Reader<'a, 'b> {
     pub fn eat_ch(&mut self) -> Result<&'b str> {
         let Some((_, ch)) = self.cursor.eat() else {
-            return Err(Error::new("eof", self.line_no, self.col_no));
+            return Err(Error::new(
+                "eof",
+                self.position(),
+                self.line_no,
+                self.col_no,
+            ));
         };
 
         if ch == "\n" {
@@ -119,11 +124,11 @@ impl<'a, 'b> Reader<'a, 'b> {
     }
 
     pub fn error(&self, message: impl Into<Cow<'static, str>>) -> Error {
-        Error::new(message, self.line_no, self.col_no)
+        Error::new(message, self.position(), self.line_no, self.col_no)
     }
 
     pub fn error_with(&self, message: impl Into<Cow<'static, str>>, errors: Vec<Error>) -> Error {
-        Error::new_with(message, self.line_no, self.col_no, errors)
+        Error::new_with(message, self.position(), self.line_no, self.col_no, errors)
     }
 
     pub fn input(&self) -> &'b str {
