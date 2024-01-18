@@ -1,5 +1,6 @@
 use crate::span::{Span, WithSpan};
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, Copy, Eq, PartialOrd, Ord)]
 pub struct Lex<'a> {
     pub value: &'a str,
@@ -40,6 +41,7 @@ impl<'a> WithSpan for Lex<'a> {
     }
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, Copy)]
 pub struct Item<T> {
     pub value: T,
