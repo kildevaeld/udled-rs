@@ -164,5 +164,5 @@ impl Tokenizer for JsonStringValue {
 }
 
 fn main() {
-    let json = parse(r#"{"field": 200, list: [true, "string"]}"#);
+    let json = parse(r#"{"field": 200, "list": [true, "string"]}"#);
 }
