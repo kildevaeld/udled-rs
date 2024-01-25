@@ -1,18 +1,22 @@
-use std::string::String;
+use std::collections::HashMap;
+
 use udled::{
     token::{Bool, Int, Opt, Str, Ws},
     Input, Tokenizer,
 };
 
-pub enum Value {
+enum Value {
     String(String),
     Bool(bool),
+    Int(i64),
+    List(Vec<Value>),
+    Object(HashMap<String, Value>),
     Null,
 }
 
 const WS: Opt<Ws> = Opt(Ws);
 
-pub fn parse(input: &str) -> Result<Value, udled::Error> {
+fn parse(input: &str) -> Result<Value, udled::Error> {
     let mut input = udled::Input::new(input);
 
     // input.parse(WS)?;
@@ -25,8 +29,6 @@ fn parse_value(input: &mut Input<'_>) -> Result<Value, udled::Error> {
         return Err(input.error("unexpected eof"));
     };
 
-    // println!("CHAR {ch}");
-
     match ch {
         "{" => parse_object(input),
         "[" => parse_list(input),
@@ -38,7 +40,7 @@ fn parse_value(input: &mut Input<'_>) -> Result<Value, udled::Error> {
             let _ = input.parse("null")?;
             Ok(Value::Null)
         }
-        "\"" => input.parse(JsonString).map(Value::String),
+        "\"" => input.parse(JsonStringValue),
         _ => input.parse(JsonNumber),
     }
 }
@@ -46,14 +48,15 @@ fn parse_value(input: &mut Input<'_>) -> Result<Value, udled::Error> {
 fn parse_object(input: &mut Input<'_>) -> Result<Value, udled::Error> {
     let _ = input.parse((WS, '{'))?;
 
-    let mut map = Map::default();
+    let mut map = HashMap::default();
+
+    let _ = input.parse(WS)?;
 
     loop {
         if input.eos() {
             return Err(input.error("unexpected eof"));
         }
 
-        let _ = input.parse(WS)?;
         let prop = input.parse(JsonString)?;
         let _ = input.parse((WS, ':', WS))?;
 
@@ -61,21 +64,25 @@ fn parse_object(input: &mut Input<'_>) -> Result<Value, udled::Error> {
 
         map.insert(prop, value);
 
-        if input.peek((WS, '}'))? {
-            input.parse((WS, '}'))?;
+        let _ = input.parse(WS)?;
+
+        if input.peek('}')? {
+            input.parse('}')?;
             break;
         }
 
         let _ = input.parse((WS, ','))?;
+
+        let _ = input.parse(WS)?;
     }
 
-    Ok(Value::Map(map))
+    Ok(Value::Object(map))
 }
 
 fn parse_list(input: &mut Input<'_>) -> Result<Value, udled::Error> {
     let _ = input.parse((WS, '['))?;
 
-    let mut map = List::default();
+    let mut map = Vec::default();
 
     loop {
         if input.eos() {
@@ -84,12 +91,17 @@ fn parse_list(input: &mut Input<'_>) -> Result<Value, udled::Error> {
 
         let _ = input.parse(WS)?;
 
+        if input.peek(']')? {
+            input.parse(']')?;
+            break;
+        }
+
         let value = parse_value(input)?;
 
         map.push(value);
 
-        if input.peek((WS, ']'))? {
-            input.parse((WS, ']'))?;
+        if input.peek(']')? {
+            input.parse(']')?;
             break;
         }
 
@@ -108,7 +120,7 @@ impl Tokenizer for JsonNumber {
         reader: &mut udled::Reader<'_, 'a>,
     ) -> Result<Self::Token<'a>, udled::Error> {
         let int = reader.parse(Int)?;
-        Ok(Value::Number((int.value as i64).into()))
+        Ok(Value::Int((int.value as i64).into()))
     }
 }
 
@@ -122,10 +134,34 @@ impl Tokenizer for JsonString {
         reader: &mut udled::Reader<'_, 'a>,
     ) -> Result<Self::Token<'a>, udled::Error> {
         let output = reader.parse(Str)?;
+
         Ok(output.as_str().into())
     }
 
     fn peek<'a>(&self, reader: &mut udled::Reader<'_, '_>) -> Result<bool, udled::Error> {
         reader.peek('"')
     }
+}
+
+struct JsonStringValue;
+
+impl Tokenizer for JsonStringValue {
+    type Token<'a> = Value;
+    // TODO: Impl json string parsing
+    fn to_token<'a>(
+        &self,
+        reader: &mut udled::Reader<'_, 'a>,
+    ) -> Result<Self::Token<'a>, udled::Error> {
+        let output = reader.parse(Str)?;
+
+        Ok(Value::String(output.value.to_string()))
+    }
+
+    fn peek<'a>(&self, reader: &mut udled::Reader<'_, '_>) -> Result<bool, udled::Error> {
+        reader.peek('"')
+    }
+}
+
+fn main() {
+    let json = parse(r#"{"field": 200, list: [true, "string"]}"#);
 }
