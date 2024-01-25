@@ -113,6 +113,7 @@ fn parse_list(input: &mut Input<'_>) -> Result<Value, udled::Error> {
 
 struct JsonNumber;
 
+// TODO: Impl floats
 impl Tokenizer for JsonNumber {
     type Token<'a> = Value;
     fn to_token<'a>(
