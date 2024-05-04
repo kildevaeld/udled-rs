@@ -611,7 +611,7 @@ macro_rules! any {
         {
             let e = $first;
             $(
-                let e = Or(e, $rest);
+                let e = $crate::token::Or(e, $rest);
             )*
             e
         }
