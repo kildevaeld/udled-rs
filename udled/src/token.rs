@@ -545,7 +545,7 @@ impl Tokenizer for Punctuation {
 }
 
 #[derive(Debug, Clone, Copy, Default)]
-pub struct Punctuated<T, P>(pub T, pub P, bool);
+pub struct Punctuated<T, P>(pub T, pub P, pub bool);
 
 impl<T, P> Tokenizer for Punctuated<T, P>
 where
