@@ -14,7 +14,7 @@ impl<'a> PartialEq for Lex<'a> {
 }
 
 impl<'a> Lex<'a> {
-    pub fn new(value: &'a str, span: Span) -> Lex<'a> {
+    pub const fn new(value: &'a str, span: Span) -> Lex<'a> {
         Lex { value, span }
     }
 
@@ -49,7 +49,7 @@ pub struct Item<T> {
 }
 
 impl<T> Item<T> {
-    pub fn new(value: T, span: Span) -> Item<T> {
+    pub const fn new(value: T, span: Span) -> Item<T> {
         Item { value, span }
     }
 }

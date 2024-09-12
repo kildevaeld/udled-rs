@@ -427,6 +427,7 @@ impl Tokenizer for Bool {
 
 // Helpers
 
+#[derive(Debug, Clone, Copy, Default)]
 pub struct EOF;
 
 impl Tokenizer for EOF {
@@ -475,6 +476,7 @@ impl Tokenizer for Digit {
     }
 }
 
+#[derive(Debug, Clone, Copy, Default)]
 pub struct Char;
 
 impl Tokenizer for Char {
@@ -494,6 +496,7 @@ impl Tokenizer for Char {
     }
 }
 
+#[derive(Debug, Clone, Copy, Default)]
 pub struct Alphabetic;
 
 impl Tokenizer for Alphabetic {
@@ -509,6 +512,7 @@ impl Tokenizer for Alphabetic {
     }
 }
 
+#[derive(Debug, Clone, Copy, Default)]
 pub struct AlphaNumeric;
 
 impl Tokenizer for AlphaNumeric {
@@ -524,6 +528,7 @@ impl Tokenizer for AlphaNumeric {
     }
 }
 
+#[derive(Debug, Clone, Copy, Default)]
 pub struct Punctuation;
 
 impl Tokenizer for Punctuation {
@@ -539,7 +544,8 @@ impl Tokenizer for Punctuation {
     }
 }
 
-pub struct Punctuated<T, P>(pub T, pub P);
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Punctuated<T, P>(pub T, pub P, bool);
 
 impl<T, P> Tokenizer for Punctuated<T, P>
 where
@@ -560,6 +566,10 @@ where
 
             reader.eat(&self.1)?;
 
+            if self.2 && !reader.peek(&self.0)? {
+                break;
+            }
+
             let item = reader.parse(&self.0)?;
             output.push(item);
         }
@@ -567,6 +577,66 @@ where
         let end = reader.position();
 
         Ok(Item::new(output, Span::new(start, end)))
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Group<O, T, C>(pub O, pub T, pub C);
+
+impl<O, T, C> Tokenizer for Group<O, T, C>
+where
+    O: Tokenizer,
+    T: Tokenizer,
+    C: Tokenizer,
+{
+    type Token<'a> = Item<T::Token<'a>>;
+
+    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
+        let start = reader.position();
+
+        reader.eat(&self.0)?;
+
+        let item = reader.parse(&self.1)?;
+
+        reader.eat(&self.2)?;
+
+        let end = reader.position();
+
+        Ok(Item::new(item, Span::new(start, end)))
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Prefix<P, T>(pub P, pub T);
+
+impl<P, T> Tokenizer for Prefix<P, T>
+where
+    P: Tokenizer,
+    T: Tokenizer,
+{
+    type Token<'a> = Item<T::Token<'a>>;
+
+    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
+        let start = reader.position();
+        let (_, item) = reader.parse((&self.0, &self.1))?;
+        Ok(Item::new(item, Span::new(start, reader.position())))
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Suffix<T, S>(pub T, pub S);
+
+impl<T, S> Tokenizer for Suffix<T, S>
+where
+    S: Tokenizer,
+    T: Tokenizer,
+{
+    type Token<'a> = Item<T::Token<'a>>;
+
+    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
+        let start = reader.position();
+        let (item, _) = reader.parse((&self.0, &self.1))?;
+        Ok(Item::new(item, Span::new(start, reader.position())))
     }
 }
 
@@ -720,6 +790,28 @@ where
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct Not<T>(pub T);
+
+impl<T> Tokenizer for Not<T>
+where
+    T: Tokenizer,
+{
+    type Token<'a> = ();
+
+    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
+        if reader.peek(&self.0)? {
+            let ch = reader.peek_ch().unwrap_or("EOF");
+            return Err(reader.error(format!("unexpected token: {ch}")));
+        }
+        Ok(())
+    }
+
+    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
+        Ok(reader.peek(&self.0)?)
+    }
+}
+
 #[macro_export]
 macro_rules! any {
     [$one: expr] => {
@@ -775,28 +867,6 @@ macro_rules! tokenizer {
 }
 
 tokenizer!(T1 T2 T3 T4 T5 T6 T7 T8 T9 T10 T11 T12);
-
-#[derive(Debug, Clone, Copy)]
-pub struct Not<T>(pub T);
-
-impl<T> Tokenizer for Not<T>
-where
-    T: Tokenizer,
-{
-    type Token<'a> = ();
-
-    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
-        if reader.peek(&self.0)? {
-            let ch = reader.peek_ch().unwrap_or("EOF");
-            return Err(reader.error(format!("unexpected token: {ch}")));
-        }
-        Ok(())
-    }
-
-    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
-        Ok(reader.peek(&self.0)?)
-    }
-}
 
 #[cfg(test)]
 mod test {
@@ -899,5 +969,24 @@ mod test {
 
         let mut input = Input::new("-har");
         assert!(input.parse(AlphaNumeric).is_err());
+    }
+
+    #[test]
+    fn punctuated() {
+        let mut input = Input::new("ident ,ident2, 202");
+
+        assert_eq!(
+            input
+                .parse(Punctuated(Ident, Group(Opt(Ws), ',', Opt(Ws)), true))
+                .unwrap(),
+            Item {
+                value: vec![
+                    Lex::new("ident", Span::new(0, 5)),
+                    Lex::new("ident2", Span::new(7, 12))
+                ],
+                span: Span::new(0, 13)
+            }
+        );
+        assert!(input.parse(Punctuated(Ident, ',', false)).is_err())
     }
 }
