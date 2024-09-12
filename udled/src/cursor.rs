@@ -57,27 +57,18 @@ impl<'a, 'input> Cursor<'a, 'input> {
         ch
     }
 
-    pub fn current_idx(&self) -> usize {
-        if *self.next_idx == 0 {
-            0
-        } else {
-            *self.next_idx - 1
-        }
-    }
-
-    pub fn current(&self) -> Option<(usize, &'input str)> {
-        self.buffer.graph.get(self.current_idx()).copied()
-    }
-
     pub fn position(&self) -> usize {
-        self.current().map(|m| m.0).unwrap_or_default()
-    }
-
-    pub fn next_position(&self) -> usize {
         self.buffer
+            .graph
             .get(*self.next_idx)
             .map(|m| m.0)
-            .unwrap_or_else(|| self.position() + 1)
+            .unwrap_or(
+                self.buffer
+                    .graph
+                    .last()
+                    .map(|m| m.0 + 1)
+                    .unwrap_or_default(),
+            )
     }
 
     pub fn eof(&self) -> bool {
@@ -147,9 +138,9 @@ mod test {
         assert_eq!(cursor.position(), 0);
         assert_eq!(cursor.peekn(1), Some((1, "e")));
         assert_eq!(cursor.eat(), Some((0, "H")));
-        assert_eq!(cursor.position(), 0);
+        assert_eq!(cursor.position(), 1);
         assert_eq!(cursor.peek(), Some((1, "e")));
         assert_eq!(cursor.eat(), Some((1, "e")));
-        assert_eq!(cursor.position(), 1)
+        assert_eq!(cursor.position(), 2)
     }
 }

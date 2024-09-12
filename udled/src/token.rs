@@ -39,13 +39,13 @@ pub struct Ws;
 impl Tokenizer for Ws {
     type Token<'a> = Span;
     fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
+        let start = reader.position();
+
         let first = reader.eat_ch()?;
 
         if !first.is_whitespace() {
             return Err(reader.error("whitespace"));
         }
-
-        let start = reader.position();
 
         loop {
             let Some(ch) = reader.peek_ch() else {
@@ -61,7 +61,7 @@ impl Tokenizer for Ws {
 
         Ok(Span {
             start,
-            end: reader.next_position(),
+            end: reader.position(),
         })
     }
 }
@@ -71,7 +71,7 @@ impl<'lit> Tokenizer for &'lit str {
     fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
         let tokens = self.graphemes(true);
 
-        let start = reader.next_position();
+        let start = reader.position();
 
         let line_no = reader.line_no();
         let col_no = reader.col_no();
@@ -88,13 +88,18 @@ impl<'lit> Tokenizer for &'lit str {
             }
         }
 
-        if start == reader.next_position() {
-            panic!()
+        if start == reader.position() {
+            return Err(Error::new(
+                self.to_string(),
+                reader.position(),
+                line_no,
+                col_no,
+            ));
         }
 
         Ok(Span {
             start,
-            end: reader.next_position(),
+            end: reader.position(),
         })
     }
 
@@ -202,7 +207,7 @@ impl Tokenizer for Ident {
     type Token<'a> = Lex<'a>;
 
     fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
-        let start_idx = reader.next_position();
+        let start_idx = reader.position();
 
         let mut end_idx = start_idx;
 
@@ -236,9 +241,9 @@ impl Tokenizer for Ident {
             return Err(reader.error("expected identifier"));
         }
 
-        let ret = &reader.input()[start_idx..reader.position() + 1];
+        let ret = &reader.input()[start_idx..reader.position()];
 
-        Ok(Lex::new(ret, Span::new(start_idx, reader.position() + 1)))
+        Ok(Lex::new(ret, Span::new(start_idx, reader.position())))
     }
 
     fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
@@ -253,7 +258,7 @@ pub struct LineComment;
 impl Tokenizer for LineComment {
     type Token<'a> = Lex<'a>;
     fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
-        let start = reader.next_position();
+        let start = reader.position();
 
         let _ = reader.parse("//")?;
 
@@ -276,10 +281,16 @@ impl Tokenizer for LineComment {
             }
         }
 
-        let end = reader.next_position() - lb;
+        let end = reader.position() - lb;
+
+        let value = if end > 2 {
+            &reader.input()[(start + 2)..end]
+        } else {
+            ""
+        };
 
         Ok(Lex {
-            value: &reader.input()[(start + 2)..end],
+            value,
             span: Span::new(start, end),
         })
     }
@@ -295,7 +306,7 @@ pub struct MultiLineComment;
 impl Tokenizer for MultiLineComment {
     type Token<'a> = Lex<'a>;
     fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
-        let start = reader.next_position();
+        let start = reader.position();
 
         let _ = reader.parse("/*")?;
 
@@ -318,8 +329,8 @@ impl Tokenizer for MultiLineComment {
         }
 
         Ok(Lex {
-            value: &reader.input()[(start + 2)..reader.next_position() - 2],
-            span: Span::new(start, reader.next_position()),
+            value: &reader.input()[(start + 2)..reader.position() - 2],
+            span: Span::new(start, reader.position()),
         })
     }
 
@@ -336,7 +347,7 @@ impl Tokenizer for Int {
     fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
         let mut val: i128 = 0;
 
-        let start = reader.next_position();
+        let start = reader.position();
 
         let sign = if reader.parse("-").is_ok() { -1 } else { 1 };
 
@@ -372,10 +383,7 @@ impl Tokenizer for Int {
             }
         }
 
-        return Ok(Item::new(
-            sign * val,
-            Span::new(start, reader.next_position()),
-        ));
+        return Ok(Item::new(sign * val, Span::new(start, reader.position())));
     }
 
     fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
@@ -464,6 +472,101 @@ impl Tokenizer for Digit {
         };
 
         Ok(ch.is_digit(self.0))
+    }
+}
+
+pub struct Char;
+
+impl Tokenizer for Char {
+    type Token<'a> = Lex<'a>;
+    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
+        let start = reader.position();
+        let ch = reader.eat_ch()?;
+        let end = reader.position();
+        Ok(Lex {
+            value: ch,
+            span: Span { start, end },
+        })
+    }
+
+    fn peek<'a>(&self, _reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
+        Ok(true)
+    }
+}
+
+pub struct Alphabetic;
+
+impl Tokenizer for Alphabetic {
+    type Token<'a> = Lex<'a>;
+
+    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
+        let ch = reader.parse(Char)?;
+        if ch.value.is_alphabetic() {
+            Ok(ch)
+        } else {
+            Err(reader.error("expected alphabetic"))
+        }
+    }
+}
+
+pub struct AlphaNumeric;
+
+impl Tokenizer for AlphaNumeric {
+    type Token<'a> = Lex<'a>;
+
+    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
+        let ch = reader.parse(Char)?;
+        if ch.value.is_alphanumeric() {
+            Ok(ch)
+        } else {
+            Err(reader.error("expected alphanumeric"))
+        }
+    }
+}
+
+pub struct Punctuation;
+
+impl Tokenizer for Punctuation {
+    type Token<'a> = Lex<'a>;
+
+    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
+        let ch = reader.parse(Char)?;
+        if ch.value.is_ascii_punctuation() {
+            Ok(ch)
+        } else {
+            Err(reader.error("expected punctuation"))
+        }
+    }
+}
+
+pub struct Punctuated<T, P>(pub T, pub P);
+
+impl<T, P> Tokenizer for Punctuated<T, P>
+where
+    T: Tokenizer,
+    P: Tokenizer,
+{
+    type Token<'a> = Item<Vec<T::Token<'a>>>;
+
+    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
+        let start = reader.position();
+        let item = reader.parse(&self.0)?;
+
+        let mut output = vec![item];
+        loop {
+            if !reader.peek(&self.1)? {
+                break;
+            }
+
+            reader.eat(&self.1)?;
+
+            let item = reader.parse(&self.0)?;
+            output.push(item);
+        }
+
+        let end = reader.position();
+
+        Ok(Item::new(output, Span::new(start, end)))
     }
 }
 
@@ -602,6 +705,21 @@ where
     }
 }
 
+pub struct Spanned<T>(pub T);
+
+impl<T> Tokenizer for Spanned<T>
+where
+    T: Tokenizer,
+{
+    type Token<'a> = Span;
+    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
+        let start = reader.position();
+        reader.eat(&self.0)?;
+        let end = reader.position();
+        Ok(Span { start, end })
+    }
+}
+
 #[macro_export]
 macro_rules! any {
     [$one: expr] => {
@@ -712,5 +830,74 @@ mod test {
         assert_eq!(input.parse(Opt("He")).unwrap(), None,);
         assert_eq!(input.position(), 0);
         assert_eq!(input.peek_ch(), Some("W"));
+    }
+
+    #[test]
+    fn char() {
+        let mut input = Input::new("char");
+        assert_eq!(
+            input.parse(Char).unwrap(),
+            Lex {
+                value: "c",
+                span: Span { start: 0, end: 1 }
+            }
+        );
+    }
+
+    #[test]
+    fn alphabetic() {
+        let mut input = Input::new("char");
+        assert_eq!(
+            input.parse(Alphabetic).unwrap(),
+            Lex {
+                value: "c",
+                span: Span { start: 0, end: 1 }
+            }
+        );
+
+        let mut input = Input::new("-har");
+        assert!(input.parse(Alphabetic).is_err());
+    }
+
+    #[test]
+    fn alphabetic_numeric() {
+        let mut input = Input::new("2char");
+        assert_eq!(
+            input.parse(AlphaNumeric).unwrap(),
+            Lex {
+                value: "2",
+                span: Span { start: 0, end: 1 }
+            }
+        );
+
+        let mut input = Input::new("-har");
+        assert!(input.parse(AlphaNumeric).is_err());
+    }
+
+    #[test]
+    fn ident() {
+        let mut input = Input::new("Ident other");
+        assert_eq!(
+            input.parse(Ident).unwrap(),
+            Lex {
+                value: "Ident",
+                span: Span { start: 0, end: 5 }
+            }
+        );
+
+        let mut input = Input::new("-har");
+        assert!(input.parse(AlphaNumeric).is_err());
+    }
+
+    #[test]
+    fn spanned() {
+        let mut input = Input::new("Test this string");
+        assert_eq!(
+            input.parse(Spanned(Ident)).unwrap(),
+            Span { start: 0, end: 4 }
+        );
+
+        let mut input = Input::new("-har");
+        assert!(input.parse(AlphaNumeric).is_err());
     }
 }

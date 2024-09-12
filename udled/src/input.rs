@@ -139,10 +139,6 @@ impl<'a, 'b> Reader<'a, 'b> {
         self.cursor.position()
     }
 
-    pub fn next_position(&self) -> usize {
-        self.cursor.next_position()
-    }
-
     pub fn peek_ch(&mut self) -> Option<&'b str> {
         self.cursor.peek().map(|m| m.1)
     }
