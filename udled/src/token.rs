@@ -149,7 +149,7 @@ pub struct Str;
 impl Tokenizer for Str {
     type Token<'a> = Lex<'a>;
     fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
-        let _ = reader.parse('"')?;
+        let start = reader.parse('"')?;
 
         let start_idx = reader.position();
 
@@ -189,9 +189,13 @@ impl Tokenizer for Str {
             }
         }
 
+        let span = Span::new(start.start, reader.position());
+
         Ok(Lex::new(
-            &reader.input()[(start_idx + 1)..reader.position()],
-            Span::new(start_idx, reader.position() + 1),
+            Span::new(span.start + 1, span.end - 1)
+                .slice(reader.input())
+                .unwrap(),
+            span,
         ))
     }
 
