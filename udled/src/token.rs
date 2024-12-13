@@ -814,6 +814,24 @@ where
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct Test<T>(pub T);
+
+impl<T> Tokenizer for Test<T>
+where
+    T: Tokenizer,
+{
+    type Token<'a> = Span;
+
+    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
+        reader.parse(Spanned(&self.0))
+    }
+
+    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
+        Ok(self.to_token(reader).is_ok())
+    }
+}
+
 #[macro_export]
 macro_rules! any {
     [$one: expr] => {
