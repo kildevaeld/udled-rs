@@ -151,8 +151,6 @@ impl Tokenizer for Str {
     fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
         let start = reader.parse('"')?;
 
-        let start_idx = reader.position();
-
         loop {
             if reader.eof() {
                 return Err(reader.error("unexpected end of input while parsing string literal"));
