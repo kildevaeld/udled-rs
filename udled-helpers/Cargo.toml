@@ -1,0 +1,7 @@
+[package]
+name = "udled-helpers"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+udled = { path = "../udled" }

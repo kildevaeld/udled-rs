@@ -33,6 +33,7 @@ where
     }
 }
 
+/// Match any whitespace
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Ws;
 
@@ -66,6 +67,7 @@ impl Tokenizer for Ws {
     }
 }
 
+/// Match a literal string
 impl<'lit> Tokenizer for &'lit str {
     type Token<'a> = Span;
     fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
@@ -116,12 +118,13 @@ impl<'lit> Tokenizer for &'lit str {
     }
 }
 
+/// Match a literal char
 impl Tokenizer for char {
     type Token<'a> = Span;
     fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
-        let next = reader.eat_ch()?;
-
         let start = reader.position();
+
+        let next = reader.eat_ch()?;
 
         match next.chars().next() {
             Some(next) if next == *self => Ok(Span {
@@ -143,292 +146,9 @@ impl Tokenizer for char {
     }
 }
 
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Str;
-
-impl Tokenizer for Str {
-    type Token<'a> = Lex<'a>;
-    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
-        let start = reader.parse('"')?;
-
-        loop {
-            if reader.eof() {
-                return Err(reader.error("unexpected end of input while parsing string literal"));
-            }
-
-            let ch = reader.eat_ch()?;
-
-            if ch == r#"""# {
-                break;
-            }
-
-            if ch == "\\" {
-                match reader.eat_ch()? {
-                    "\\" | "\'" | "\"" | "t" | "r" | "n" | "0" => {
-                        continue;
-                    }
-
-                    // // Hexadecimal escape sequence
-                    // "x" => {
-                    //     let digit0 = reader.eat_ch()?.to_digit(16);
-                    //     let digit1 = reader.eat_ch()?.to_digit(16);
-
-                    //     match (digit0, digit1) {
-                    //         (Some(d0), Some(d1)) => {
-                    //             // let byte_val = ((d0 << 4) + d1) as u8;
-                    //             //out.push(byte_val as char);
-                    //             continue;
-                    //         }
-                    //         _ => return Err(reader.error("invalid hexadecimal escape sequence")),
-                    //     }
-                    // }
-                    _ => return Err(reader.error("unknown escape sequence")),
-                }
-            }
-        }
-
-        let span = Span::new(start.start, reader.position());
-
-        Ok(Lex::new(
-            Span::new(span.start + 1, span.end - 1)
-                .slice(reader.input())
-                .unwrap(),
-            span,
-        ))
-    }
-
-    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
-        reader.peek('"')
-    }
-}
-
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Ident;
-
-impl Tokenizer for Ident {
-    type Token<'a> = Lex<'a>;
-
-    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
-        let start_idx = reader.position();
-
-        let mut end_idx = start_idx;
-
-        let Some(first) = reader.peek_ch() else {
-            return Err(reader.error("expected identifier"));
-        };
-
-        if !first.is_alphabetic() && first != "_" {
-            return Err(reader.error("expected identifier"));
-        }
-
-        loop {
-            let Some(ch) = reader.peek_ch() else {
-                break;
-            };
-
-            if ch == "\0" {
-                break;
-            }
-
-            if !ch.is_ascii_alphanumeric() && ch != "_" {
-                break;
-            }
-
-            end_idx += 1;
-
-            reader.eat_ch()?;
-        }
-
-        if start_idx == end_idx {
-            return Err(reader.error("expected identifier"));
-        }
-
-        let ret = &reader.input()[start_idx..reader.position()];
-
-        Ok(Lex::new(ret, Span::new(start_idx, reader.position())))
-    }
-
-    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
-        let ch = reader.eat_ch()?;
-        Ok(ch.is_alphabetic() || ch == "_")
-    }
-}
-
-#[derive(Debug, Clone, Copy, Default)]
-pub struct LineComment;
-
-impl Tokenizer for LineComment {
-    type Token<'a> = Lex<'a>;
-    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
-        let start = reader.position();
-
-        let _ = reader.parse("//")?;
-
-        let mut lb = 0;
-
-        loop {
-            let Some(ch) = reader.peek_ch() else {
-                break;
-            };
-
-            if ch == "\0" {
-                break;
-            }
-
-            reader.eat_ch()?;
-
-            if ch == "\n" {
-                lb = 1;
-                break;
-            }
-        }
-
-        let end = reader.position() - lb;
-
-        let value = if end > 2 {
-            &reader.input()[(start + 2)..end]
-        } else {
-            ""
-        };
-
-        Ok(Lex {
-            value,
-            span: Span::new(start, end),
-        })
-    }
-
-    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
-        reader.peek("//")
-    }
-}
-
-#[derive(Debug, Clone, Copy, Default)]
-pub struct MultiLineComment;
-
-impl Tokenizer for MultiLineComment {
-    type Token<'a> = Lex<'a>;
-    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
-        let start = reader.position();
-
-        let _ = reader.parse("/*")?;
-
-        let mut depth = 1;
-
-        loop {
-            if reader.eof() {
-                return Err(reader.error("unexpected end of input inside multi-line comment"));
-            } else if reader.parse("/*").is_ok() {
-                depth += 1;
-            } else if reader.parse("*/").is_ok() {
-                depth -= 1;
-
-                if depth == 0 {
-                    break;
-                }
-            } else {
-                reader.eat_ch()?;
-            }
-        }
-
-        Ok(Lex {
-            value: &reader.input()[(start + 2)..reader.position() - 2],
-            span: Span::new(start, reader.position()),
-        })
-    }
-
-    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
-        reader.peek("/*")
-    }
-}
-
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Int;
-
-impl Tokenizer for Int {
-    type Token<'a> = Item<i128>;
-    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
-        let mut val: i128 = 0;
-
-        let start = reader.position();
-
-        let sign = if reader.parse("-").is_ok() { -1 } else { 1 };
-
-        let mut base = 10;
-        if reader.parse("0x").is_ok() {
-            base = 16
-        };
-        if reader.parse("0b").is_ok() {
-            base = 2
-        };
-
-        loop {
-            let ch = reader.parse(Digit(base))?;
-
-            val = (base as i128) * val + (ch as i128);
-
-            let Some(ch) = reader.peek_ch() else {
-                break;
-            };
-
-            // Allow underscores as separators
-            if ch == "_" {
-                reader.eat_ch()?;
-                continue;
-            }
-
-            if ch == "\0" {
-                break;
-            }
-
-            if !ch.is_digit(base) {
-                break;
-            }
-        }
-
-        return Ok(Item::new(sign * val, Span::new(start, reader.position())));
-    }
-
-    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
-        let Some(mut ch) = reader.peek_ch() else {
-            return Ok(false);
-        };
-
-        if ch == "-" {
-            let Some(next) = reader.peek_chn(1) else {
-                return Ok(false);
-            };
-
-            ch = next;
-        }
-
-        Ok(ch.is_digit(10))
-    }
-}
-
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Bool;
-
-impl Tokenizer for Bool {
-    type Token<'a> = Item<bool>;
-
-    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
-        let ret = reader.parse(Or("true", "false"))?;
-
-        let item = match ret {
-            Either::Left(span) => Item::new(true, span),
-            Either::Right(span) => Item::new(false, span),
-        };
-
-        Ok(item)
-    }
-
-    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
-        Ok(reader.peek("true")? || reader.peek("false")?)
-    }
-}
-
 // Helpers
 
+/// Match EOF
 #[derive(Debug, Clone, Copy, Default)]
 pub struct EOF;
 
@@ -447,6 +167,7 @@ impl Tokenizer for EOF {
     }
 }
 
+/// Match a digit with a given radix
 #[derive(Debug, Clone, Copy)]
 pub struct Digit(pub u32);
 
@@ -478,6 +199,7 @@ impl Tokenizer for Digit {
     }
 }
 
+/// Match a char
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Char;
 
@@ -498,6 +220,7 @@ impl Tokenizer for Char {
     }
 }
 
+/// Match a alphabetic character
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Alphabetic;
 
@@ -514,6 +237,7 @@ impl Tokenizer for Alphabetic {
     }
 }
 
+/// Match a alphabetic numeric character
 #[derive(Debug, Clone, Copy, Default)]
 pub struct AlphaNumeric;
 
@@ -530,6 +254,7 @@ impl Tokenizer for AlphaNumeric {
     }
 }
 
+/// Match a punctuation
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Punctuation;
 
@@ -546,6 +271,8 @@ impl Tokenizer for Punctuation {
     }
 }
 
+/// Match a list of T's separated by P's.
+/// Possible to allow trailing P's
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Punctuated<T, P>(pub T, pub P, pub bool);
 
@@ -582,6 +309,8 @@ where
     }
 }
 
+/// Match a group of O T C
+/// Match a Item<T> with a span covering the full match
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Group<O, T, C>(pub O, pub T, pub C);
 
@@ -894,24 +623,36 @@ mod test {
 
     use super::*;
 
-    #[test]
-    fn line_comment() {
-        let mut input = Input::new("//");
-        assert_eq!(
-            input.parse(LineComment).unwrap(),
-            Lex::new("", Span::new(0, 2))
-        );
+    struct Word;
 
-        let mut input = Input::new("// Some tekst");
-        assert_eq!(
-            input.parse(LineComment).unwrap(),
-            Lex::new(" Some tekst", Span::new(0, 13))
-        );
-        let mut input = Input::new("// Some tekst\n test");
-        assert_eq!(
-            input.parse(LineComment).unwrap(),
-            Lex::new(" Some tekst", Span::new(0, 13))
-        );
+    impl Tokenizer for Word {
+        type Token<'a> = Lex<'a>;
+
+        fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
+            if !reader.peek(Alphabetic)? {
+                return Err(reader.error("expected alphabetic"));
+            }
+
+            let start = reader.position();
+
+            loop {
+                if reader.eof() {
+                    break;
+                }
+
+                if !reader.peek(Alphabetic)? {
+                    break;
+                }
+            }
+
+            let span = Span::new(start, reader.position());
+
+            if !span.is_valid() {
+                return Err(reader.error("no word"));
+            }
+
+            Ok(Lex::new(span.slice(reader.input()).unwrap(), span))
+        }
     }
 
     #[test]
@@ -965,25 +706,10 @@ mod test {
     }
 
     #[test]
-    fn ident() {
-        let mut input = Input::new("Ident other");
-        assert_eq!(
-            input.parse(Ident).unwrap(),
-            Lex {
-                value: "Ident",
-                span: Span { start: 0, end: 5 }
-            }
-        );
-
-        let mut input = Input::new("-har");
-        assert!(input.parse(AlphaNumeric).is_err());
-    }
-
-    #[test]
     fn spanned() {
         let mut input = Input::new("Test this string");
         assert_eq!(
-            input.parse(Spanned(Ident)).unwrap(),
+            input.parse(Spanned(Word)).unwrap(),
             Span { start: 0, end: 4 }
         );
 
@@ -993,20 +719,20 @@ mod test {
 
     #[test]
     fn punctuated() {
-        let mut input = Input::new("ident ,ident2, 202");
+        let mut input = Input::new("ident ,identto, 202");
 
         assert_eq!(
             input
-                .parse(Punctuated(Ident, Group(Opt(Ws), ',', Opt(Ws)), true))
+                .parse(Punctuated(Word, Group(Opt(Ws), ',', Opt(Ws)), true))
                 .unwrap(),
             Item {
                 value: vec![
                     Lex::new("ident", Span::new(0, 5)),
-                    Lex::new("ident2", Span::new(7, 12))
+                    Lex::new("identto", Span::new(7, 12))
                 ],
                 span: Span::new(0, 13)
             }
         );
-        assert!(input.parse(Punctuated(Ident, ',', false)).is_err())
+        assert!(input.parse(Punctuated(Word, ',', false)).is_err())
     }
 }

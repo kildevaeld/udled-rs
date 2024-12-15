@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 
 use udled::{
-    token::{Bool, Int, Opt, Str, Ws},
+    token::{Opt, Ws},
     Input, Tokenizer,
 };
+use udled_helpers::{Bool, Int, Str};
 
 enum Value {
     String(String),
