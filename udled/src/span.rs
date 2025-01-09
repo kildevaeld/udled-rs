@@ -168,6 +168,14 @@ mod test {
     }
 
     #[test]
+    fn len() {
+        assert_eq!(Span::default().len(), 0);
+        assert_eq!(Span::new(2, 1).len(), 0);
+        assert_eq!(Span::new(0, 1).len(), 1);
+        assert_eq!(Span::new(2, 4).len(), 2);
+    }
+
+    #[test]
     fn test_add() {
         assert_eq!(span!(0, 36), span!(0, 30) + span!(20, 36));
         assert_eq!(span!(0, 40), span!(0, 10) + span!(30, 40));
