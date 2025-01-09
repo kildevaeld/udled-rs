@@ -70,6 +70,14 @@ impl Span {
             Some(&input[self.start..self.end])
         }
     }
+
+    pub fn len(&self) -> usize {
+        if self.is_valid() {
+            self.end - self.start
+        } else {
+            0
+        }
+    }
 }
 
 impl WithSpan for Span {

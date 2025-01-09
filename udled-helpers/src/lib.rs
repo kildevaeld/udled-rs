@@ -51,12 +51,13 @@ impl Tokenizer for Str {
 
         let span = start + end;
 
-        Ok(Lex::new(
-            Span::new(span.start + 1, span.end - 1)
-                .slice(reader.input())
-                .unwrap(),
-            span,
-        ))
+        let str = if span.len() == 2 {
+            Span::new(span.start + 1, span.end).slice(reader.input())
+        } else {
+            Span::new(span.start + 1, span.end - 1).slice(reader.input())
+        };
+
+        Ok(Lex::new(str.unwrap(), span))
     }
 
     fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
