@@ -1,7 +1,7 @@
 #![no_std]
 
 use udled::{
-    token::{Digit, Or},
+    token::{Char, Digit, Or},
     Either, Error, Item, Lex, Reader, Span, StringExt, Tokenizer,
 };
 
@@ -13,15 +13,15 @@ impl Tokenizer for Str {
     fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
         let start = reader.parse('"')?;
 
-        loop {
+        let end = loop {
             if reader.eof() {
                 return Err(reader.error("unexpected end of input while parsing string literal"));
             }
 
-            let ch = reader.eat_ch()?;
+            let ch = reader.parse(Char)?;
 
             if ch == r#"""# {
-                break;
+                break ch.span;
             }
 
             if ch == "\\" {
@@ -47,9 +47,9 @@ impl Tokenizer for Str {
                     _ => return Err(reader.error("unknown escape sequence")),
                 }
             }
-        }
+        };
 
-        let span = Span::new(start.start, reader.position());
+        let span = start + end;
 
         Ok(Lex::new(
             Span::new(span.start + 1, span.end - 1)
