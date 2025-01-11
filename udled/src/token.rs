@@ -47,6 +47,26 @@ where
     }
 }
 
+impl<L, R> Tokenizer for Either<L, R>
+where
+    L: Tokenizer,
+    R: Tokenizer,
+{
+    type Token<'a> = Either<L::Token<'a>, R::Token<'a>>;
+    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
+        match self {
+            Self::Left(left) => Ok(Either::Left(left.to_token(reader)?)),
+            Self::Right(right) => Ok(Either::Right(right.to_token(reader)?)),
+        }
+    }
+
+    fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
+        match self {
+            Self::Left(left) => left.peek(reader),
+            Self::Right(right) => right.peek(reader),
+        }
+    }
+}
 /// Match any whitespace
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Ws;
