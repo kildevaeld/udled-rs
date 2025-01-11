@@ -33,6 +33,20 @@ where
     }
 }
 
+impl<'b, T> Tokenizer for &'b mut T
+where
+    T: Tokenizer,
+{
+    type Token<'a> = T::Token<'a>;
+    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
+        (**self).to_token(reader)
+    }
+
+    fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
+        (**self).peek(reader)
+    }
+}
+
 /// Match any whitespace
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Ws;
@@ -574,7 +588,8 @@ macro_rules! any {
             )*
             e
         }
-    }
+    };
+
 }
 
 macro_rules! tokenizer {
