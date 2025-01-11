@@ -78,6 +78,20 @@ impl Span {
             0
         }
     }
+
+    pub fn range(&self) -> core::ops::Range<usize> {
+        self.start..self.end
+    }
+}
+
+impl core::ops::RangeBounds<usize> for Span {
+    fn start_bound(&self) -> core::ops::Bound<&usize> {
+        core::ops::Bound::Included(&self.start)
+    }
+
+    fn end_bound(&self) -> core::ops::Bound<&usize> {
+        core::ops::Bound::Excluded(&self.end)
+    }
 }
 
 impl WithSpan for Span {
