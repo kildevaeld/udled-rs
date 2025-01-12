@@ -27,6 +27,9 @@ pub const fn python_multiline_comment() -> RawMultiLine<&'static str, &'static s
     RawMultiLine("'''", "'''")
 }
 
+pub const fn javascript_doc_comment() -> RawMultiLine<&'static str, &'static str> {
+    RawMultiLine("/**", "*/")
+}
 #[derive(Debug, Clone, Copy, Default)]
 pub struct LineComment;
 
