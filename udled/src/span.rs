@@ -82,6 +82,24 @@ impl Span {
     pub fn range(&self) -> core::ops::Range<usize> {
         self.start..self.end
     }
+
+    pub fn contains(&self, other: Span) -> bool {
+        other.start >= self.start && other.end <= self.end
+    }
+
+    pub fn with_end(self, end: usize) -> Span {
+        Span {
+            start: self.start,
+            end,
+        }
+    }
+
+    pub fn with_start(self, start: usize) -> Span {
+        Span {
+            start,
+            end: self.end,
+        }
+    }
 }
 
 impl core::ops::RangeBounds<usize> for Span {

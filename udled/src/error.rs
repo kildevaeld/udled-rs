@@ -40,7 +40,7 @@ impl fmt::Display for Error {
 impl std::error::Error for Error {}
 
 impl Error {
-    pub fn new(
+    pub(crate) fn new(
         message: impl Into<Cow<'static, str>>,
         position: usize,
         line_no: usize,
@@ -69,6 +69,10 @@ impl Error {
             errors,
             position,
         }
+    }
+
+    pub fn message(&self) -> &str {
+        &self.message
     }
 
     pub fn col_no(&self) -> usize {
