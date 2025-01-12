@@ -116,93 +116,6 @@ impl Tokenizer for Ident {
 }
 
 #[derive(Debug, Clone, Copy, Default)]
-pub struct LineComment;
-
-impl Tokenizer for LineComment {
-    type Token<'a> = Lex<'a>;
-    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
-        let start = reader.position();
-
-        let _ = reader.parse("//")?;
-
-        let mut lb = 0;
-
-        loop {
-            let Some(ch) = reader.peek_ch() else {
-                break;
-            };
-
-            if ch == "\0" {
-                break;
-            }
-
-            reader.eat_ch()?;
-
-            if ch == "\n" {
-                lb = 1;
-                break;
-            }
-        }
-
-        let end = reader.position() - lb;
-
-        let value = if end > 2 {
-            &reader.input()[(start + 2)..end]
-        } else {
-            ""
-        };
-
-        Ok(Lex {
-            value,
-            span: Span::new(start, end),
-        })
-    }
-
-    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
-        reader.peek("//")
-    }
-}
-
-#[derive(Debug, Clone, Copy, Default)]
-pub struct MultiLineComment;
-
-impl Tokenizer for MultiLineComment {
-    type Token<'a> = Lex<'a>;
-    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
-        let start = reader.position();
-
-        let _ = reader.parse("/*")?;
-
-        let mut depth = 1;
-
-        loop {
-            if reader.eof() {
-                return Err(reader.error("unexpected end of input inside multi-line comment"));
-            } else if reader.parse("/*").is_ok() {
-                depth += 1;
-            } else if reader.parse("*/").is_ok() {
-                depth -= 1;
-
-                if depth == 0 {
-                    break;
-                }
-            } else {
-                reader.eat_ch()?;
-            }
-        }
-
-        Ok(Lex {
-            value: &reader.input()[(start + 2)..reader.position() - 2],
-            span: Span::new(start, reader.position()),
-        })
-    }
-
-    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
-        reader.peek("/*")
-    }
-}
-
-#[derive(Debug, Clone, Copy, Default)]
 pub struct Int;
 
 impl Tokenizer for Int {
@@ -293,26 +206,6 @@ mod test {
     use udled::{token::AlphaNumeric, Input};
 
     use super::*;
-
-    #[test]
-    fn line_comment() {
-        let mut input = Input::new("//");
-        assert_eq!(
-            input.parse(LineComment).unwrap(),
-            Lex::new("", Span::new(0, 2))
-        );
-
-        let mut input = Input::new("// Some tekst");
-        assert_eq!(
-            input.parse(LineComment).unwrap(),
-            Lex::new(" Some tekst", Span::new(0, 13))
-        );
-        let mut input = Input::new("// Some tekst\n test");
-        assert_eq!(
-            input.parse(LineComment).unwrap(),
-            Lex::new(" Some tekst", Span::new(0, 13))
-        );
-    }
 
     #[test]
     fn ident() {
