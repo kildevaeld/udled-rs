@@ -83,9 +83,9 @@ impl<'a> Input<'a> {
         self.buffer.slice()
     }
 
-    pub fn error(&self, message: impl Into<Cow<'static, str>>) -> Error {
-        Error::new(message, self.position(), self.line_no, self.col_no)
-    }
+    // pub fn error(&self, message: impl Into<Cow<'static, str>>) -> Error {
+    //     Error::new(message, self.position(), self.line_no, self.col_no)
+    // }
 }
 
 pub struct Reader<'a, 'b> {
