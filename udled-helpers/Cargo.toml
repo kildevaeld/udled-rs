@@ -1,7 +1,16 @@
 [package]
 name = "udled-helpers"
 version = "0.1.0"
-edition = "2021"
+
+edition.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+readme = "README.md"
+description = "Tokenizers for udled"
 
 [dependencies]
-udled = { path = "../udled" }
+udled = { path = "../udled", version = "0.1" }
