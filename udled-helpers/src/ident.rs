@@ -1,6 +1,6 @@
 use udled::{
     any,
-    token::{Alphabetic, Spanned},
+    token::{AlphaNumeric, Alphabetic, Spanned},
     Lex, Tokenizer,
 };
 
@@ -14,7 +14,7 @@ impl Tokenizer for XmlIdent {
         reader: &mut udled::Reader<'_, 'a>,
     ) -> Result<Self::Token<'a>, udled::Error> {
         let start_tokenizer = any!(':', Alphabetic, '_');
-        let rest_tokenizer = any!(start_tokenizer, '-', ".");
+        let rest_tokenizer = any!(start_tokenizer, AlphaNumeric, '-', ".");
         let all = any!(start_tokenizer, rest_tokenizer);
 
         let start = reader.parse(Spanned(&start_tokenizer))?;
@@ -50,7 +50,7 @@ mod test {
 
     #[test]
     fn xml_ident() {
-        let mut input = Input::new("div custom-tag data-id");
+        let mut input = Input::new("div custom-tag data-id2");
 
         assert_eq!(
             input.parse((XmlIdent, Ws, XmlIdent, Ws, XmlIdent)).unwrap(),
@@ -59,7 +59,7 @@ mod test {
                 Span::new(3, 4),
                 Lex::new("custom-tag", Span::new(4, 14)),
                 Span::new(14, 15),
-                Lex::new("data-id", Span::new(15, 22))
+                Lex::new("data-id2", Span::new(15, 23))
             )
         );
     }
