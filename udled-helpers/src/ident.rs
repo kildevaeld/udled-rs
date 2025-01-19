@@ -1,0 +1,43 @@
+use udled::{
+    any,
+    token::{Alphabetic, Spanned},
+    Lex, Tokenizer,
+};
+
+pub struct XmlIdent;
+
+impl Tokenizer for XmlIdent {
+    type Token<'a> = Lex<'a>;
+
+    fn to_token<'a>(
+        &self,
+        reader: &mut udled::Reader<'_, 'a>,
+    ) -> Result<Self::Token<'a>, udled::Error> {
+        let start_tokenizer = any!(':', Alphabetic, '_');
+        let rest_tokenizer = any!(start_tokenizer, '-', ".");
+        let all = any!(start_tokenizer, rest_tokenizer);
+
+        let start = reader.parse(Spanned(&start_tokenizer))?;
+        let mut end = start;
+
+        loop {
+            if reader.eof() {
+                break;
+            }
+
+            if !reader.peek(&all)? {
+                break;
+            }
+
+            end = reader.parse(Spanned(&all))?;
+        }
+
+        let span = start + end;
+
+        if let Some(content) = span.slice(reader.input()) {
+            Ok(Lex::new(content, span))
+        } else {
+            Err(reader.error("Invalid range"))
+        }
+    }
+}
