@@ -60,7 +60,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "udled-lexers"
+name = "udled-tokenizers"
 version = "0.0.1"
 dependencies = [
  "udled",
