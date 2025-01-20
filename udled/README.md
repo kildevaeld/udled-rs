@@ -12,11 +12,6 @@ impl Tokenizer for Word {
 
     fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
         let span = reader.parse(Spanned(OneOrMany(Alphabetic)))
-
-        if !span.is_valid() {
-            return Err(reader.error("no word"));
-        }
-
         Ok(Lex::new(span.slice(reader.input()).unwrap(), span))
     }
 
