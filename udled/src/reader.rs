@@ -53,8 +53,8 @@ impl<'a, 'b> Reader<'a, 'b> {
     }
 
     /// The input string
-    pub fn input(&self) -> &'b str {
-        self.cursor.input()
+    pub fn source(&self) -> &'b str {
+        self.cursor.source()
     }
 
     pub fn error(&self, message: impl Into<Cow<'static, str>>) -> Error {

@@ -91,7 +91,7 @@ where
         let span = Span::new(start, reader.position());
 
         Ok(Lex {
-            value: span.slice(reader.input()).expect("slice"),
+            value: span.slice(reader.source()).expect("slice"),
             span,
         })
     }
@@ -125,7 +125,7 @@ where
         let span = start + end;
 
         Ok(Lex {
-            value: span.slice(reader.input()).expect("slice"),
+            value: span.slice(reader.source()).expect("slice"),
             span,
         })
     }
@@ -169,7 +169,7 @@ where
         let span = Span::new(start, reader.position());
 
         Ok(Lex {
-            value: span.slice(reader.input()).expect("slice"),
+            value: span.slice(reader.source()).expect("slice"),
             span,
         })
     }

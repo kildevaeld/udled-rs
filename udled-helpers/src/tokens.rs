@@ -50,9 +50,9 @@ impl Tokenizer for Str {
         let span = start + end;
 
         let str = if span.len() == 2 {
-            Span::new(span.start + 1, span.end).slice(reader.input())
+            Span::new(span.start + 1, span.end).slice(reader.source())
         } else {
-            Span::new(span.start + 1, span.end - 1).slice(reader.input())
+            Span::new(span.start + 1, span.end - 1).slice(reader.source())
         };
 
         Ok(Lex::new(str.unwrap(), span))
@@ -104,7 +104,7 @@ impl Tokenizer for Ident {
             return Err(reader.error("expected identifier"));
         }
 
-        let ret = &reader.input()[start_idx..reader.position()];
+        let ret = &reader.source()[start_idx..reader.position()];
 
         Ok(Lex::new(ret, Span::new(start_idx, reader.position())))
     }

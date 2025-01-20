@@ -65,8 +65,8 @@ impl<'a> Input<'a> {
         Ok(())
     }
 
-    pub fn slice(&self) -> &'a str {
-        self.buffer.slice()
+    pub fn source(&self) -> &'a str {
+        self.buffer.source()
     }
 
     pub fn error(&self, message: impl Into<Cow<'static, str>>) -> Error {

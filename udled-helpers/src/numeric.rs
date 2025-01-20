@@ -123,7 +123,7 @@ impl Tokenizer for Float {
         }
 
         let input = (start + end)
-            .slice(reader.input())
+            .slice(reader.source())
             .ok_or_else(|| reader.error("Invalid range"))?;
 
         let float: f64 = input

@@ -641,7 +641,7 @@ mod test {
                 return Err(reader.error("no word"));
             }
 
-            Ok(Lex::new(span.slice(reader.input()).unwrap(), span))
+            Ok(Lex::new(span.slice(reader.source()).unwrap(), span))
         }
     }
 

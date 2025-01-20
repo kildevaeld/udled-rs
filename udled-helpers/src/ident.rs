@@ -48,7 +48,7 @@ impl Tokenizer for XmlIdent {
 
         let span = start + end;
 
-        if let Some(content) = span.slice(reader.input()) {
+        if let Some(content) = span.slice(reader.source()) {
             Ok(Lex::new(content, span))
         } else {
             Err(reader.error("Invalid range"))

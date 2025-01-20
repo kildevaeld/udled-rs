@@ -16,7 +16,7 @@ impl<'input> Buffer<'input> {
         }
     }
 
-    pub fn slice(&self) -> &'input str {
+    pub fn source(&self) -> &'input str {
         self.input
     }
 
@@ -51,7 +51,7 @@ impl<'a, 'input> Cursor<'a, 'input> {
         }
     }
 
-    pub fn input(&self) -> &'input str {
+    pub fn source(&self) -> &'input str {
         self.buffer.input
     }
 
