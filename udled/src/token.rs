@@ -48,10 +48,7 @@ impl Tokenizer for core::ops::Range<char> {
 
         for n in char.as_str().chars() {
             if !self.contains(&n) {
-                return Err(reader.error(format!(
-                    "Expected char in range: {}..{}",
-                    self.start, self.end
-                )));
+                return Err(reader.error(format!("Expected char in range: {:?}", self)));
             }
         }
 
@@ -67,11 +64,7 @@ impl Tokenizer for core::ops::RangeInclusive<char> {
 
         for n in char.as_str().chars() {
             if !self.contains(&n) {
-                return Err(reader.error(format!(
-                    "Expected char in range: {}..{}",
-                    self.start(),
-                    self.end()
-                )));
+                return Err(reader.error(format!("Expected char in range: {:?}", self)));
             }
         }
 
@@ -111,7 +104,7 @@ impl Tokenizer for Ws {
         let first = reader.eat_ch()?;
 
         if !first.is_whitespace() {
-            return Err(reader.error("whitespace"));
+            return Err(reader.error("Expected whitespace"));
         }
 
         loop {
