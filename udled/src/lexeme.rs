@@ -20,7 +20,7 @@ impl<'a> Lex<'a> {
         Lex { value, span }
     }
 
-    pub fn as_str(&self) -> &'a str {
+    pub const fn as_str(&self) -> &'a str {
         self.value
     }
 }

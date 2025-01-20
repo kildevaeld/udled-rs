@@ -49,20 +49,23 @@ impl<'a> Input<'a> {
     }
 
     pub fn peek_ch(&mut self) -> Option<&str> {
-        self.buffer.get(self.next_idx).map(|m| m.1)
+        self.reader().peek_ch()
     }
 
     pub fn peek<T: Tokenizer>(&mut self, tokenizer: T) -> Result<bool> {
-        Reader::new(self).peek(tokenizer)
+        self.reader().peek(tokenizer)
     }
 
     pub fn parse<T: Tokenizer>(&mut self, tokenizer: T) -> Result<T::Token<'a>> {
-        Reader::new(self).parse(tokenizer)
+        self.reader().parse(tokenizer)
     }
 
     pub fn eat<T: Tokenizer>(&mut self, tokenizer: T) -> Result<()> {
-        let _ = self.parse(tokenizer)?;
-        Ok(())
+        self.reader().eat(tokenizer)
+    }
+
+    pub fn reader<'b>(&'b mut self) -> Reader<'b, 'a> {
+        Reader::new(self)
     }
 
     pub fn source(&self) -> &'a str {
