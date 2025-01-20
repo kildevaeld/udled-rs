@@ -517,10 +517,10 @@ impl<T> Tokenizer for Test<T>
 where
     T: Tokenizer,
 {
-    type Token<'a> = Span;
+    type Token<'a> = T::Token<'a>;
 
     fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
-        reader.parse(Spanned(&self.0))
+        reader.parse(&self.0)
     }
 
     fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
