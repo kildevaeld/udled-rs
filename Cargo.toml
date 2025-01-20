@@ -2,7 +2,7 @@
 
 resolver = "2"
 
-members = ["udled", "udled-helpers"]
+members = ["udled", "udled-lexers"]
 
 [workspace.package]
 edition = "2021"
