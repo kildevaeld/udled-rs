@@ -35,7 +35,7 @@ impl<'a> Input<'a> {
         self.buffer
             .get(self.next_idx)
             .map(|m| m.0)
-            .unwrap_or_default()
+            .unwrap_or_else(|| self.buffer.len())
     }
 
     pub fn eos(&self) -> bool {
@@ -71,5 +71,40 @@ impl<'a> Input<'a> {
 
     pub fn error(&self, message: impl Into<Cow<'static, str>>) -> Error {
         Error::new(message, self.position(), self.line_no, self.col_no)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::Input;
+
+    #[test]
+    fn input() {
+        let mut input = Input::new("  ");
+
+        assert!(input.parse(" ").is_ok());
+        assert_eq!(input.position(), 1);
+        assert_eq!(input.line_no(), 1);
+        assert_eq!(input.col_no(), 2);
+
+        assert!(input.parse(" ").is_ok());
+        assert_eq!(input.position(), 2);
+        assert_eq!(input.line_no(), 1);
+        assert_eq!(input.col_no(), 3);
+    }
+
+    #[test]
+    fn input_error() {
+        let mut input = Input::new("  ");
+
+        assert!(input.parse(" ").is_ok());
+        assert_eq!(input.position(), 1);
+        assert_eq!(input.line_no(), 1);
+        assert_eq!(input.col_no(), 2);
+
+        assert!(input.parse("w").is_err());
+        assert_eq!(input.position(), 1);
+        assert_eq!(input.line_no(), 1);
+        assert_eq!(input.col_no(), 2);
     }
 }
