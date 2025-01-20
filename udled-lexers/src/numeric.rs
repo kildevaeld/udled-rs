@@ -4,7 +4,7 @@ use udled::{
     token::{Digit, Opt, Spanned},
     Error, Item, Reader, Span, StringExt, Tokenizer,
 };
-
+/// Match a rust style integer
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Int;
 
@@ -69,6 +69,7 @@ impl Tokenizer for Int {
     }
 }
 
+/// Match a integer
 pub struct Integer;
 
 impl Tokenizer for Integer {
@@ -111,6 +112,7 @@ impl Tokenizer for Integer {
     }
 }
 
+/// Match a rust style float
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Float;
 

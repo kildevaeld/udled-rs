@@ -1,5 +1,6 @@
 use udled::{any, token::Or, Either, Error, Item, Reader, Tokenizer};
 
+/// Match 'true' or 'false'
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Bool;
 

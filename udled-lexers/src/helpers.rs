@@ -4,15 +4,23 @@ use udled::{Error, Item, Reader, Span, Tokenizer};
 /// Match a list of T's separated by P's.
 /// Possible to allow trailing P's
 #[derive(Debug, Clone, Copy, Default)]
-pub struct Punctuated<T, P>(pub T, pub P, pub bool);
+pub struct Punctuated<T, P> {
+    item: T,
+    punct: P,
+    trailing: bool,
+}
 
 impl<T, P> Punctuated<T, P> {
-    pub fn new(item: T, punct: P) -> Punctuated<T, P> {
-        Punctuated(item, punct, false)
+    pub const fn new(item: T, punct: P) -> Punctuated<T, P> {
+        Punctuated {
+            item,
+            punct,
+            trailing: false,
+        }
     }
 
-    pub fn with_trailing(mut self, trailing: bool) -> Punctuated<T, P> {
-        self.2 = trailing;
+    pub const fn with_trailing(mut self, trailing: bool) -> Punctuated<T, P> {
+        self.trailing = trailing;
         self
     }
 }
@@ -26,21 +34,21 @@ where
 
     fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
         let start = reader.position();
-        let item = reader.parse(&self.0)?;
+        let item = reader.parse(&self.item)?;
 
         let mut output = vec![item];
         loop {
-            if !reader.peek(&self.1)? {
+            if reader.eof() || !reader.peek(&self.punct)? {
                 break;
             }
 
-            reader.eat(&self.1)?;
+            reader.eat(&self.punct)?;
 
-            if self.2 && !reader.peek(&self.0)? {
+            if self.trailing && (reader.eof() || !reader.peek(&self.item)?) {
                 break;
             }
 
-            let item = reader.parse(&self.0)?;
+            let item = reader.parse(&self.item)?;
             output.push(item);
         }
 
@@ -48,42 +56,15 @@ where
 
         Ok(Item::new(output, Span::new(start, end)))
     }
-}
 
-/// Match a group of O T C
-/// Match a Item<T> with a span covering the full match
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Group<O, T, C>(pub O, pub T, pub C);
-
-impl<O, T, C> Tokenizer for Group<O, T, C>
-where
-    O: Tokenizer,
-    T: Tokenizer,
-    C: Tokenizer,
-{
-    type Token<'a> = Item<T::Token<'a>>;
-
-    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
-        let start = reader.position();
-
-        reader.eat(&self.0)?;
-
-        let item = reader.parse(&self.1)?;
-
-        reader.eat(&self.2)?;
-
-        let end = reader.position();
-
-        Ok(Item::new(item, Span::new(start, end)))
+    fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
+        reader.peek(&self.item)
     }
 }
 
 #[cfg(test)]
 mod test {
-    use udled::{
-        token::{Opt, Ws},
-        Input, Lex,
-    };
+    use udled::{Input, Lex};
 
     use crate::Ident;
 
@@ -91,20 +72,18 @@ mod test {
 
     #[test]
     fn punctuated() {
-        let mut input = Input::new("ident ,identto, 202,");
+        let mut input = Input::new("ident,identto,");
+
+        let ret = input
+            .parse(Punctuated::new(Ident, ',').with_trailing(true))
+            .unwrap();
 
         assert_eq!(
-            input
-                .parse(Punctuated(Ident, Group(Opt(Ws), ',', Opt(Ws)), true))
-                .unwrap(),
-            Item {
-                value: vec![
-                    Lex::new("ident", Span::new(0, 5)),
-                    Lex::new("identto", Span::new(7, 12))
-                ],
-                span: Span::new(0, 13)
-            }
-        );
-        assert!(input.parse(Punctuated(Ident, ',', false)).is_err())
+            ret.value,
+            vec![
+                Lex::new("ident", Span::default()),
+                Lex::new("identto", Span::default())
+            ]
+        )
     }
 }

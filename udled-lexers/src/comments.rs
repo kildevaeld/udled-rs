@@ -34,6 +34,8 @@ pub const fn javascript_doc_comment() -> RawMultiLine<&'static str, &'static str
 pub const fn html_comment() -> RawMultiLine<&'static str, &'static str> {
     RawMultiLine("<!--", "-->")
 }
+
+/// Match a c style line comment
 #[derive(Debug, Clone, Copy, Default)]
 pub struct LineComment;
 
@@ -48,6 +50,7 @@ impl Tokenizer for LineComment {
     }
 }
 
+/// Match a c style multiline comments with support for nested comments
 #[derive(Debug, Clone, Copy, Default)]
 pub struct MultiLineComment;
 

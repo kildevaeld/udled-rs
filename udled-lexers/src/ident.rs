@@ -1,5 +1,6 @@
 use udled::{any, token::Spanned, Lex, Span, StringExt, Tokenizer};
 
+/// Match a unicode identifier
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Ident;
 
