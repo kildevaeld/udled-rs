@@ -1,5 +1,5 @@
 use udled::{
-    token::{Char, Digit, Or},
+    token::{Char, Or},
     Either, Error, Item, Lex, Reader, Span, StringExt, Tokenizer,
 };
 
@@ -112,70 +112,6 @@ impl Tokenizer for Ident {
     fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
         let ch = reader.eat_ch()?;
         Ok(ch.is_alphabetic() || ch == "_")
-    }
-}
-
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Int;
-
-impl Tokenizer for Int {
-    type Token<'a> = Item<i128>;
-    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
-        let mut val: i128 = 0;
-
-        let start = reader.position();
-
-        let sign = if reader.parse("-").is_ok() { -1 } else { 1 };
-
-        let mut base = 10;
-        if reader.parse("0x").is_ok() {
-            base = 16
-        };
-        if reader.parse("0b").is_ok() {
-            base = 2
-        };
-
-        loop {
-            let ch = reader.parse(Digit(base))?;
-
-            val = (base as i128) * val + (ch as i128);
-
-            let Some(ch) = reader.peek_ch() else {
-                break;
-            };
-
-            // Allow underscores as separators
-            if ch == "_" {
-                reader.eat_ch()?;
-                continue;
-            }
-
-            if ch == "\0" {
-                break;
-            }
-
-            if !ch.is_digit(base) {
-                break;
-            }
-        }
-
-        return Ok(Item::new(sign * val, Span::new(start, reader.position())));
-    }
-
-    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
-        let Some(mut ch) = reader.peek_ch() else {
-            return Ok(false);
-        };
-
-        if ch == "-" {
-            let Some(next) = reader.peek_chn(1) else {
-                return Ok(false);
-            };
-
-            ch = next;
-        }
-
-        Ok(ch.is_digit(10))
     }
 }
 

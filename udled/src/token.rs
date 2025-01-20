@@ -700,10 +700,10 @@ mod test {
 
     #[test]
     fn range() {
-        let mut input = Input::new("a");
+        let mut input = Input::new("b");
         assert_eq!(
             input.parse('a'..'z').unwrap(),
-            Lex::new("a", Span::new(0, 1))
+            Lex::new("b", Span::new(0, 1))
         )
     }
 
