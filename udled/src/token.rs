@@ -1,3 +1,5 @@
+use core::marker::PhantomData;
+
 use alloc::{format, string::ToString, vec, vec::Vec};
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -37,6 +39,25 @@ where
 
     fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
         (**self).peek(reader)
+    }
+}
+
+pub struct Func<T, U>(T, PhantomData<U>);
+
+impl<T, U> Func<T, U> {
+    pub fn new(func: T) -> Func<T, U> {
+        Func(func, PhantomData)
+    }
+}
+
+impl<T, U> Tokenizer for Func<T, U>
+where
+    for<'a, 'b> T: Fn(&mut Reader<'a, 'b>) -> Result<U, Error>,
+{
+    type Token<'a> = U;
+
+    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
+        (self.0)(reader)
     }
 }
 
@@ -694,5 +715,16 @@ mod test {
         );
 
         assert!(Input::new("==").parse(('=', Not('='))).is_err())
+    }
+
+    #[test]
+    fn func() {
+        let mut input = Input::new("Hello");
+
+        let ret = input
+            .parse(Func::new(|ctx: &mut Reader| ctx.parse("Hello")))
+            .unwrap();
+
+        assert_eq!(ret, Span::new(0, 5));
     }
 }
