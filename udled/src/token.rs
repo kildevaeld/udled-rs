@@ -554,13 +554,7 @@ macro_rules! any {
         $one
     };
     [$first: expr, $($rest: expr),*] => {
-        {
-            let e = $first;
-            $(
-                let e = $crate::token::Or(e, $rest);
-            )*
-            e
-        }
+        $crate::token::Or($first, $crate::any!($($rest),*))
     };
 
 }

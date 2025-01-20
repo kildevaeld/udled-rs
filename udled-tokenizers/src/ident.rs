@@ -58,6 +58,8 @@ impl Tokenizer for Ident {
 
 pub struct XmlIdent;
 
+impl XmlIdent {}
+
 impl Tokenizer for XmlIdent {
     type Token<'a> = Lex<'a>;
 
@@ -109,6 +111,19 @@ impl Tokenizer for XmlIdent {
         } else {
             Err(reader.error("Invalid range"))
         }
+    }
+
+    fn peek(&self, reader: &mut udled::Reader<'_, '_>) -> Result<bool, udled::Error> {
+        reader.peek(any!(
+            ':',
+            'a'..='z',
+            'A'..='Z',
+            '\u{2070}'..='\u{218F}',
+            '\u{2C00}'..='\u{2FEF}',
+            '\u{3001}'..='\u{D7FF}',
+            '\u{F900}'..='\u{FDCF}',
+            '\u{FDF0}'..='\u{FFFD}'
+        ))
     }
 }
 
