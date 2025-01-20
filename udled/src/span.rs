@@ -55,11 +55,11 @@ pub struct Span {
 }
 
 impl Span {
-    pub fn new(start: usize, end: usize) -> Span {
+    pub const fn new(start: usize, end: usize) -> Span {
         Span { start, end }
     }
 
-    pub fn is_valid(&self) -> bool {
+    pub const fn is_valid(&self) -> bool {
         self.start < self.end
     }
 
@@ -71,7 +71,7 @@ impl Span {
         }
     }
 
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         if self.is_valid() {
             self.end - self.start
         } else {
@@ -79,22 +79,22 @@ impl Span {
         }
     }
 
-    pub fn range(&self) -> core::ops::Range<usize> {
+    pub const fn range(&self) -> core::ops::Range<usize> {
         self.start..self.end
     }
 
-    pub fn contains(&self, other: Span) -> bool {
+    pub const fn contains(&self, other: Span) -> bool {
         other.start >= self.start && other.end <= self.end
     }
 
-    pub fn with_end(self, end: usize) -> Span {
+    pub const fn with_end(self, end: usize) -> Span {
         Span {
             start: self.start,
             end,
         }
     }
 
-    pub fn with_start(self, start: usize) -> Span {
+    pub const fn with_start(self, start: usize) -> Span {
         Span {
             start,
             end: self.end,
@@ -115,12 +115,6 @@ impl core::ops::RangeBounds<usize> for Span {
 impl WithSpan for Span {
     fn span(&self) -> Span {
         *self
-    }
-}
-
-impl<'a> From<(usize, &'a str)> for Span {
-    fn from((pos, s): (usize, &'a str)) -> Self {
-        Span::new(pos, pos + s.len())
     }
 }
 

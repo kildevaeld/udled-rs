@@ -35,7 +35,10 @@ pub struct Cursor<'a, 'input> {
 }
 
 impl<'a, 'input> Cursor<'a, 'input> {
-    pub(crate) fn new(buffer: &'a Buffer<'input>, next_idx: &'a mut usize) -> Cursor<'a, 'input> {
+    pub(crate) const fn new(
+        buffer: &'a Buffer<'input>,
+        next_idx: &'a mut usize,
+    ) -> Cursor<'a, 'input> {
         Cursor { buffer, next_idx }
     }
 
@@ -75,9 +78,9 @@ impl<'a, 'input> Cursor<'a, 'input> {
         *self.next_idx >= self.buffer.graph.len()
     }
 
-    pub fn child<F, R>(&mut self, mut func: F) -> Result<R, Error>
+    pub fn child<F, R>(&mut self, func: F) -> Result<R, Error>
     where
-        F: FnMut(Cursor<'_, 'input>) -> Result<R, Error>,
+        F: FnOnce(Cursor<'_, 'input>) -> Result<R, Error>,
     {
         let mut next_idx = *self.next_idx;
 
@@ -95,9 +98,9 @@ impl<'a, 'input> Cursor<'a, 'input> {
         }
     }
 
-    pub fn child_peek<F, R>(&mut self, mut func: F) -> Result<R, Error>
+    pub fn child_peek<F, R>(&mut self, func: F) -> Result<R, Error>
     where
-        F: FnMut(Cursor<'_, 'input>) -> Result<R, Error>,
+        F: FnOnce(Cursor<'_, 'input>) -> Result<R, Error>,
     {
         let mut next_idx = *self.next_idx;
 

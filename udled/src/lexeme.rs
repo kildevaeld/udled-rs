@@ -1,3 +1,5 @@
+use core::fmt;
+
 use crate::span::{Span, WithSpan};
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -38,6 +40,12 @@ impl<'a> AsRef<str> for Lex<'a> {
 impl<'a> WithSpan for Lex<'a> {
     fn span(&self) -> Span {
         self.span
+    }
+}
+
+impl<'a> fmt::Display for Lex<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.value.fmt(f)
     }
 }
 

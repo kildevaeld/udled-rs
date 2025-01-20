@@ -7,7 +7,7 @@ pub trait Tokenizer {
     type Token<'a>;
 
     fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error>;
-    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
+    fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
         Ok(self.to_token(reader).is_ok())
     }
 }
@@ -37,6 +37,45 @@ where
 
     fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
         (**self).peek(reader)
+    }
+}
+
+impl Tokenizer for core::ops::Range<char> {
+    type Token<'a> = Lex<'a>;
+
+    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
+        let char = reader.parse(Char)?;
+
+        for n in char.as_str().chars() {
+            if !self.contains(&n) {
+                return Err(reader.error(format!(
+                    "Expected char in range: {}..{}",
+                    self.start, self.end
+                )));
+            }
+        }
+
+        Ok(char)
+    }
+}
+
+impl Tokenizer for core::ops::RangeInclusive<char> {
+    type Token<'a> = Lex<'a>;
+
+    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
+        let char = reader.parse(Char)?;
+
+        for n in char.as_str().chars() {
+            if !self.contains(&n) {
+                return Err(reader.error(format!(
+                    "Expected char in range: {}..{}",
+                    self.start(),
+                    self.end()
+                )));
+            }
+        }
+
+        Ok(char)
     }
 }
 
@@ -132,7 +171,7 @@ impl<'lit> Tokenizer for &'lit str {
         })
     }
 
-    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
+    fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
         let tokens = self.graphemes(true);
         for (idx, next) in tokens.enumerate() {
             if Some(next) == reader.peek_chn(idx) {
@@ -162,7 +201,7 @@ impl Tokenizer for char {
         }
     }
 
-    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
+    fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
         let Some(next) = reader.peek_ch() else {
             return Ok(false);
         };
@@ -189,7 +228,7 @@ impl Tokenizer for EOF {
             Err(reader.error("expected eof"))
         }
     }
-    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
+    fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
         Ok(reader.eof())
     }
 }
@@ -217,7 +256,7 @@ impl Tokenizer for Digit {
         Ok(ch.chars().next().unwrap().to_digit(self.0).unwrap())
     }
 
-    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
+    fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
         let Some(ch) = reader.peek_ch() else {
             return Ok(false);
         };
@@ -242,8 +281,8 @@ impl Tokenizer for Char {
         })
     }
 
-    fn peek<'a>(&self, _reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
-        Ok(true)
+    fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
+        Ok(if reader.eof() { false } else { false })
     }
 }
 
@@ -311,7 +350,7 @@ where
         Ok(reader.parse(&self.0).ok())
     }
 
-    fn peek<'a>(&self, _reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
+    fn peek(&self, _reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
         Ok(true)
     }
 }
@@ -377,7 +416,7 @@ where
         Ok(output)
     }
 
-    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
+    fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
         reader.peek(&self.0)
     }
 }
@@ -405,7 +444,7 @@ where
         Ok(output)
     }
 
-    fn peek<'a>(&self, _reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
+    fn peek(&self, _reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
         Ok(true)
     }
 }
@@ -429,7 +468,7 @@ where
         Err(reader.error_with("one of", errors))
     }
 
-    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
+    fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
         Ok(self.iter().any(|m| reader.peek(m).unwrap_or_default()))
     }
 }
@@ -466,7 +505,7 @@ where
         Ok(())
     }
 
-    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
+    fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
         Ok(reader.peek(&self.0)?)
     }
 }
@@ -484,7 +523,7 @@ where
         reader.parse(Spanned(&self.0))
     }
 
-    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
+    fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
         Ok(self.to_token(reader).is_ok())
     }
 }
@@ -643,27 +682,14 @@ mod test {
             input.parse(Spanned(Word)).unwrap(),
             Span { start: 0, end: 4 }
         );
-
-        // let mut input = Input::new("-har");
-        // assert!(input.parse(AlphaNumeric).is_err());
     }
 
-    // #[test]
-    // fn punctuated() {
-    //     let mut input = Input::new("ident ,identto, 202,");
-
-    //     assert_eq!(
-    //         input
-    //             .parse(Punctuated(Word, Group(Opt(Ws), ',', Opt(Ws)), true))
-    //             .unwrap(),
-    //         Item {
-    //             value: vec![
-    //                 Lex::new("ident", Span::new(0, 5)),
-    //                 Lex::new("identto", Span::new(7, 12))
-    //             ],
-    //             span: Span::new(0, 13)
-    //         }
-    //     );
-    //     assert!(input.parse(Punctuated(Word, ',', false)).is_err())
-    // }
+    #[test]
+    fn range() {
+        let mut input = Input::new("a");
+        assert_eq!(
+            input.parse('a'..'z').unwrap(),
+            Lex::new("a", Span::new(0, 1))
+        )
+    }
 }
