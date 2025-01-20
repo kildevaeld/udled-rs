@@ -506,7 +506,7 @@ where
     }
 
     fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
-        Ok(reader.peek(&self.0)?)
+        Ok(!reader.peek(&self.0)?)
     }
 }
 
@@ -691,5 +691,15 @@ mod test {
             input.parse('a'..'z').unwrap(),
             Lex::new("a", Span::new(0, 1))
         )
+    }
+
+    #[test]
+    fn not() {
+        assert_eq!(
+            Input::new("=-").parse(('=', Not('='))).unwrap(),
+            (Span::new(0, 1), ())
+        );
+
+        assert!(Input::new("==").parse(('=', Not('='))).is_err())
     }
 }
