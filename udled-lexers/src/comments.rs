@@ -64,6 +64,7 @@ impl Tokenizer for MultiLineComment {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct RawLineComment<T>(T);
 
 impl<T> Tokenizer for RawLineComment<T>
@@ -101,6 +102,7 @@ where
     }
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct RawMultiLine<O, C>(O, C);
 
 impl<O, C> Tokenizer for RawMultiLine<O, C>
@@ -135,6 +137,7 @@ where
     }
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct RawMultiLineNested<O, C>(O, C);
 
 impl<O, C> Tokenizer for RawMultiLineNested<O, C>
