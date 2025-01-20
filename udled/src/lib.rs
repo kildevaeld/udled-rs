@@ -10,16 +10,12 @@ mod either;
 mod error;
 mod input;
 mod lexeme;
+mod reader;
 mod span;
 mod string;
 pub mod token;
 
 pub use self::{
-    either::Either,
-    error::Error,
-    input::{Input, Reader},
-    lexeme::*,
-    span::*,
-    string::StringExt,
-    token::Tokenizer,
+    either::Either, error::Error, input::Input, lexeme::*, reader::Reader, span::*,
+    string::StringExt, token::Tokenizer,
 };

@@ -1,7 +1,7 @@
 use alloc::{format, string::ToString, vec, vec::Vec};
 use unicode_segmentation::UnicodeSegmentation;
 
-use crate::{either::Either, input::Reader, lexeme::Lex, span::Span, string::StringExt, Error};
+use crate::{either::Either, lexeme::Lex, span::Span, string::StringExt, Error, Reader};
 
 pub trait Tokenizer {
     type Token<'a>;

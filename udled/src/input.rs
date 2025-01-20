@@ -1,16 +1,16 @@
-use alloc::{borrow::Cow, vec::Vec};
-
 use crate::{
-    cursor::{Buffer, Cursor},
+    cursor::Buffer,
     error::{Error, Result},
+    reader::Reader,
     token::Tokenizer,
 };
+use alloc::borrow::Cow;
 
 pub struct Input<'a> {
-    buffer: Buffer<'a>,
-    next_idx: usize,
-    line_no: usize,
-    col_no: usize,
+    pub(super) buffer: Buffer<'a>,
+    pub(super) next_idx: usize,
+    pub(super) line_no: usize,
+    pub(super) col_no: usize,
 }
 
 impl<'a> Input<'a> {
@@ -42,36 +42,22 @@ impl<'a> Input<'a> {
         self.next_idx >= self.buffer.len()
     }
 
+    pub fn reset(&mut self) {
+        self.next_idx = 0;
+        self.col_no = 1;
+        self.line_no = 1;
+    }
+
     pub fn peek_ch(&mut self) -> Option<&str> {
         self.buffer.get(self.next_idx).map(|m| m.1)
     }
 
     pub fn peek<T: Tokenizer>(&mut self, tokenizer: T) -> Result<bool> {
-        let mut next_idx = self.next_idx;
-        tokenizer.peek(&mut Reader {
-            cursor: Cursor::new(&self.buffer, &mut next_idx),
-            line_no: self.line_no,
-            col_no: self.col_no,
-        })
+        Reader::new(self).peek(tokenizer)
     }
 
     pub fn parse<T: Tokenizer>(&mut self, tokenizer: T) -> Result<T::Token<'a>> {
-        let mut next_idx = self.next_idx;
-
-        let mut reader = Reader {
-            cursor: Cursor::new(&self.buffer, &mut next_idx),
-            line_no: self.line_no,
-            col_no: self.col_no,
-        };
-
-        let token = tokenizer.to_token(&mut reader)?;
-
-        self.line_no = reader.line_no;
-        self.col_no = reader.col_no;
-
-        self.next_idx = next_idx;
-
-        Ok(token)
+        Reader::new(self).parse(tokenizer)
     }
 
     pub fn eat<T: Tokenizer>(&mut self, tokenizer: T) -> Result<()> {
@@ -85,113 +71,5 @@ impl<'a> Input<'a> {
 
     pub fn error(&self, message: impl Into<Cow<'static, str>>) -> Error {
         Error::new(message, self.position(), self.line_no, self.col_no)
-    }
-}
-
-pub struct Reader<'a, 'b> {
-    cursor: Cursor<'a, 'b>,
-    line_no: usize,
-    col_no: usize,
-}
-
-impl<'a, 'b> Reader<'a, 'b> {
-    pub fn eat_ch(&mut self) -> Result<&'b str> {
-        let Some((_, ch)) = self.cursor.eat() else {
-            return Err(Error::new(
-                "eof",
-                self.position(),
-                self.line_no,
-                self.col_no,
-            ));
-        };
-
-        if ch == "\n" {
-            self.line_no += 1;
-            self.col_no = 1;
-        } else {
-            self.col_no += 1;
-        }
-
-        Ok(ch)
-    }
-
-    /// Current line number
-    pub fn line_no(&self) -> usize {
-        self.line_no
-    }
-
-    /// Current column
-    pub fn col_no(&self) -> usize {
-        self.col_no
-    }
-
-    /// The current position
-    pub fn position(&self) -> usize {
-        self.cursor.position()
-    }
-
-    /// The input string
-    pub fn input(&self) -> &'b str {
-        self.cursor.input()
-    }
-
-    pub fn error(&self, message: impl Into<Cow<'static, str>>) -> Error {
-        Error::new(message, self.position(), self.line_no, self.col_no)
-    }
-
-    pub fn error_with(&self, message: impl Into<Cow<'static, str>>, errors: Vec<Error>) -> Error {
-        Error::new_with(message, self.position(), self.line_no, self.col_no, errors)
-    }
-
-    /// Peek char at current position
-    pub fn peek_ch(&mut self) -> Option<&'b str> {
-        self.cursor.peek().map(|m| m.1)
-    }
-
-    /// Peek char at n position relative to current position
-    pub fn peek_chn(&mut self, peek: usize) -> Option<&'b str> {
-        self.cursor.peekn(peek).map(|m| m.1)
-    }
-
-    /// Peek a tokenizer
-    pub fn peek<T: Tokenizer>(&mut self, tokenizer: T) -> Result<bool> {
-        self.cursor.child_peek(|cursor| {
-            let mut reader = Reader {
-                cursor,
-                line_no: self.line_no,
-                col_no: self.col_no,
-            };
-
-            tokenizer.peek(&mut reader)
-        })
-    }
-
-    /// Returns true if end of feed is reached
-    pub fn eof(&self) -> bool {
-        self.cursor.eof()
-    }
-
-    /// Parse a token
-    pub fn parse<T: Tokenizer>(&mut self, tokenizer: T) -> Result<T::Token<'b>> {
-        self.cursor.child(|cursor| {
-            let mut reader = Reader {
-                cursor,
-                line_no: self.line_no,
-                col_no: self.col_no,
-            };
-
-            let token = tokenizer.to_token(&mut reader)?;
-
-            self.line_no = reader.line_no;
-            self.col_no = reader.col_no;
-
-            Ok(token)
-        })
-    }
-
-    /// Eat a token
-    pub fn eat<T: Tokenizer>(&mut self, tokenizer: T) -> Result<()> {
-        let _ = self.parse(tokenizer)?;
-        Ok(())
     }
 }

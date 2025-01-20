@@ -32,14 +32,23 @@ impl<'input> Buffer<'input> {
 pub struct Cursor<'a, 'input> {
     buffer: &'a Buffer<'input>,
     next_idx: &'a mut usize,
+    col_no: &'a mut usize,
+    line_no: &'a mut usize,
 }
 
 impl<'a, 'input> Cursor<'a, 'input> {
     pub(crate) const fn new(
         buffer: &'a Buffer<'input>,
         next_idx: &'a mut usize,
+        line_no: &'a mut usize,
+        col_no: &'a mut usize,
     ) -> Cursor<'a, 'input> {
-        Cursor { buffer, next_idx }
+        Cursor {
+            buffer,
+            next_idx,
+            line_no,
+            col_no,
+        }
     }
 
     pub fn input(&self) -> &'input str {
@@ -57,6 +66,16 @@ impl<'a, 'input> Cursor<'a, 'input> {
     pub fn eat(&mut self) -> Option<(usize, &'input str)> {
         let ch = self.buffer.graph.get(*self.next_idx).copied();
         *self.next_idx += 1;
+
+        if let Some(m) = ch.as_ref().map(|(_, m)| *m) {
+            if m == "\n" {
+                *self.line_no += 1;
+                *self.col_no = 1;
+            } else {
+                *self.col_no += 1;
+            }
+        }
+
         ch
     }
 
@@ -74,6 +93,14 @@ impl<'a, 'input> Cursor<'a, 'input> {
             )
     }
 
+    pub fn line_no(&self) -> usize {
+        *self.line_no
+    }
+
+    pub fn col_no(&self) -> usize {
+        *self.col_no
+    }
+
     pub fn eof(&self) -> bool {
         *self.next_idx >= self.buffer.graph.len()
     }
@@ -83,15 +110,21 @@ impl<'a, 'input> Cursor<'a, 'input> {
         F: FnOnce(Cursor<'_, 'input>) -> Result<R, Error>,
     {
         let mut next_idx = *self.next_idx;
+        let mut col_no = *self.col_no;
+        let mut line_no = *self.line_no;
 
         let child = Cursor {
             next_idx: &mut next_idx,
             buffer: self.buffer,
+            col_no: &mut col_no,
+            line_no: &mut line_no,
         };
 
         match func(child) {
             Ok(ret) => {
                 *self.next_idx = next_idx;
+                *self.line_no = line_no;
+                *self.col_no = col_no;
                 Ok(ret)
             }
             Err(err) => Err(err),
@@ -103,10 +136,14 @@ impl<'a, 'input> Cursor<'a, 'input> {
         F: FnOnce(Cursor<'_, 'input>) -> Result<R, Error>,
     {
         let mut next_idx = *self.next_idx;
+        let mut line_no = *self.line_no;
+        let mut col_no = *self.col_no;
 
         let child = Cursor {
             next_idx: &mut next_idx,
             buffer: self.buffer,
+            line_no: &mut line_no,
+            col_no: &mut col_no,
         };
 
         match func(child) {
@@ -134,8 +171,10 @@ mod test {
         let buffer = Buffer::new("Hello");
 
         let mut idx = 0;
+        let mut line = 0;
+        let mut col = 0;
 
-        let mut cursor = Cursor::new(&buffer, &mut idx);
+        let mut cursor = Cursor::new(&buffer, &mut idx, &mut line, &mut col);
 
         assert_eq!(cursor.peek(), Some((0, "H")));
         assert_eq!(cursor.position(), 0);
