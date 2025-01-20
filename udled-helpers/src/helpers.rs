@@ -6,6 +6,17 @@ use udled::{Error, Item, Reader, Span, Tokenizer};
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Punctuated<T, P>(pub T, pub P, pub bool);
 
+impl<T, P> Punctuated<T, P> {
+    pub fn new(item: T, punct: P) -> Punctuated<T, P> {
+        Punctuated(item, punct, false)
+    }
+
+    pub fn with_trailing(mut self, trailing: bool) -> Punctuated<T, P> {
+        self.2 = trailing;
+        self
+    }
+}
+
 impl<T, P> Tokenizer for Punctuated<T, P>
 where
     T: Tokenizer,
@@ -64,40 +75,6 @@ where
         let end = reader.position();
 
         Ok(Item::new(item, Span::new(start, end)))
-    }
-}
-
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Prefix<P, T>(pub P, pub T);
-
-impl<P, T> Tokenizer for Prefix<P, T>
-where
-    P: Tokenizer,
-    T: Tokenizer,
-{
-    type Token<'a> = Item<T::Token<'a>>;
-
-    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
-        let start = reader.position();
-        let (_, item) = reader.parse((&self.0, &self.1))?;
-        Ok(Item::new(item, Span::new(start, reader.position())))
-    }
-}
-
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Suffix<T, S>(pub T, pub S);
-
-impl<T, S> Tokenizer for Suffix<T, S>
-where
-    S: Tokenizer,
-    T: Tokenizer,
-{
-    type Token<'a> = Item<T::Token<'a>>;
-
-    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
-        let start = reader.position();
-        let (item, _) = reader.parse((&self.0, &self.1))?;
-        Ok(Item::new(item, Span::new(start, reader.position())))
     }
 }
 

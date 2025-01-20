@@ -1,4 +1,59 @@
-use udled::{any, token::Spanned, Lex, Tokenizer};
+use udled::{any, token::Spanned, Lex, Span, StringExt, Tokenizer};
+
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Ident;
+
+impl Tokenizer for Ident {
+    type Token<'a> = Lex<'a>;
+
+    fn to_token<'a>(
+        &self,
+        reader: &mut udled::Reader<'_, 'a>,
+    ) -> Result<Self::Token<'a>, udled::Error> {
+        let start_idx = reader.position();
+
+        let mut end_idx = start_idx;
+
+        let Some(first) = reader.peek_ch() else {
+            return Err(reader.error("expected identifier"));
+        };
+
+        if !first.is_alphabetic() && first != "_" {
+            return Err(reader.error("expected identifier"));
+        }
+
+        loop {
+            let Some(ch) = reader.peek_ch() else {
+                break;
+            };
+
+            if ch == "\0" {
+                break;
+            }
+
+            if !ch.is_ascii_alphanumeric() && ch != "_" {
+                break;
+            }
+
+            end_idx += 1;
+
+            reader.eat_ch()?;
+        }
+
+        if start_idx == end_idx {
+            return Err(reader.error("expected identifier"));
+        }
+
+        let ret = &reader.source()[start_idx..reader.position()];
+
+        Ok(Lex::new(ret, Span::new(start_idx, reader.position())))
+    }
+
+    fn peek<'a>(&self, reader: &mut udled::Reader<'_, '_>) -> Result<bool, udled::Error> {
+        let ch = reader.eat_ch()?;
+        Ok(ch.is_alphabetic() || ch == "_")
+    }
+}
 
 pub struct XmlIdent;
 
@@ -60,7 +115,7 @@ impl Tokenizer for XmlIdent {
 mod test {
     use udled::{token::Ws, Input, Lex, Span};
 
-    use crate::XmlIdent;
+    use super::{Ident, XmlIdent};
 
     #[test]
     fn xml_ident() {
@@ -75,6 +130,18 @@ mod test {
                 Span::new(14, 15),
                 Lex::new("data-id2", Span::new(15, 23))
             )
+        );
+    }
+
+    #[test]
+    fn ident() {
+        let mut input = Input::new("Ident other");
+        assert_eq!(
+            input.parse(Ident).unwrap(),
+            Lex {
+                value: "Ident",
+                span: Span { start: 0, end: 5 }
+            }
         );
     }
 }

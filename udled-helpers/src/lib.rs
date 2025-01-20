@@ -2,11 +2,12 @@
 
 extern crate alloc;
 
+mod bool;
 mod comments;
 mod helpers;
 mod ident;
 mod numeric;
-mod tokens;
+mod string;
 mod utils;
 
-pub use self::{comments::*, helpers::*, ident::*, numeric::*, tokens::*, utils::*};
+pub use self::{bool::*, comments::*, helpers::*, ident::*, numeric::*, utils::*};

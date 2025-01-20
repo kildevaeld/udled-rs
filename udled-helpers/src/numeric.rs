@@ -105,6 +105,10 @@ impl Tokenizer for Integer {
 
         return Ok(Item::new(val, Span::new(start, reader.position())));
     }
+
+    fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
+        reader.peek(Digit(10))
+    }
 }
 
 #[derive(Debug, Clone, Copy, Default)]
