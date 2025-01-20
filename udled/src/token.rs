@@ -279,7 +279,7 @@ impl Tokenizer for Digit {
     }
 }
 
-/// Match a char
+/// Match any unnicode graphme
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Char;
 
@@ -317,7 +317,7 @@ impl Tokenizer for Alphabetic {
     }
 }
 
-/// Match a alphabetic numeric character
+/// Match any unicode alphanumeric character
 #[derive(Debug, Clone, Copy, Default)]
 pub struct AlphaNumeric;
 
@@ -334,6 +334,7 @@ impl Tokenizer for AlphaNumeric {
     }
 }
 
+/// Match any ascii punctuation
 /// Match a punctuation
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Punctuation;
@@ -351,6 +352,7 @@ impl Tokenizer for Punctuation {
     }
 }
 
+/// Optional match T
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Opt<T>(pub T);
 
@@ -407,6 +409,7 @@ where
     }
 }
 
+/// One or many T's
 #[derive(Debug, Clone, Copy)]
 pub struct OneOrMany<T>(pub T);
 
@@ -435,6 +438,7 @@ where
     }
 }
 
+/// Many of T's
 #[derive(Debug, Clone, Copy)]
 pub struct Many<T>(pub T);
 
@@ -487,6 +491,7 @@ where
     }
 }
 
+/// Returns span of T
 pub struct Spanned<T>(pub T);
 
 impl<T> Tokenizer for Spanned<T>
@@ -502,6 +507,7 @@ where
     }
 }
 
+/// Match anything but T
 #[derive(Debug, Clone, Copy)]
 pub struct Not<T>(pub T);
 
