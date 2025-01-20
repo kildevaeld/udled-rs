@@ -123,7 +123,7 @@ impl Tokenizer for Float {
         let mut end = reader.parse(Spanned(Integer))?;
 
         if reader.peek(any!('E', 'e'))? {
-            end = reader.parse(Spanned(('E', 'e', Opt('-'), Integer)))?;
+            end = reader.parse(Spanned((any!('E', 'e'), Opt('-'), Integer)))?;
         }
 
         let input = (start + end)
@@ -135,5 +135,45 @@ impl Tokenizer for Float {
             .map_err(|err: core::num::ParseFloatError| reader.error(err.to_string()))?;
 
         Ok(Item::new(float, start + end))
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use udled::{token::Ws, Input};
+
+    use super::{Float, Int, Integer};
+
+    #[test]
+    fn integer() {
+        let mut input = Input::new("10203 0 42");
+
+        let (a, _, b, _, c) = input.parse((Integer, Ws, Integer, Ws, Integer)).unwrap();
+
+        assert_eq!(a.value, 10203);
+        assert_eq!(b.value, 0);
+        assert_eq!(c.value, 42);
+    }
+
+    #[test]
+    fn int() {
+        let mut input = Input::new("0x202 0b11 42");
+
+        let (a, _, b, _, c) = input.parse((Int, Ws, Int, Ws, Int)).unwrap();
+
+        assert_eq!(a.value, 0x202);
+        assert_eq!(b.value, 0b11);
+        assert_eq!(c.value, 42);
+    }
+
+    #[test]
+    fn float() {
+        let mut input = Input::new("1.0 2003.303 12.03e-20");
+
+        let (a, _, b, _, c) = input.parse((Float, Ws, Float, Ws, Float)).unwrap();
+
+        assert_eq!(a.value, 1.0);
+        assert_eq!(b.value, 2003.303);
+        assert_eq!(c.value, 12.03e-20);
     }
 }

@@ -82,7 +82,7 @@ where
                 break;
             };
 
-            if ch == "\0" || ch == "\n" {
+            if ch == "\n" {
                 break;
             }
 

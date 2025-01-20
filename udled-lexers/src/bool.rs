@@ -21,3 +21,20 @@ impl Tokenizer for Bool {
         reader.peek(any!("true", "false"))
     }
 }
+
+#[cfg(test)]
+mod test {
+    use udled::{token::Ws, Input};
+
+    use super::Bool;
+
+    #[test]
+    fn bool() {
+        let mut input = Input::new("true false");
+
+        let (a, _, b) = input.parse((Bool, Ws, Bool)).unwrap();
+
+        assert_eq!(a.value, true);
+        assert_eq!(b.value, false);
+    }
+}
