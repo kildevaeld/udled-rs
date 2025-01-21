@@ -56,6 +56,7 @@ impl Tokenizer for Ident {
     }
 }
 
+/// Match a xml style tag or attribute
 pub struct XmlIdent;
 
 impl XmlIdent {}

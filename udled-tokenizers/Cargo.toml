@@ -13,4 +13,4 @@ readme = "README.md"
 description = "Tokenizers for udled"
 
 [dependencies]
-udled = { path = "../udled", version = "0.1.0" }
+udled = { path = "../udled", version = "0.2.0" }

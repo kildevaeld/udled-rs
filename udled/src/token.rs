@@ -558,6 +558,10 @@ where
         Ok(Span { start, end })
     }
 
+    fn eat(&self, reader: &mut Reader<'_, '_>) -> Result<(), Error> {
+        reader.eat(&self.0)
+    }
+
     fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
         reader.peek(&self.0)
     }
