@@ -136,7 +136,7 @@ where
     }
 
     fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
-        reader.peek("/*")
+        reader.peek(&self.0)
     }
 }
 
@@ -181,7 +181,7 @@ where
     }
 
     fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
-        reader.peek("/*")
+        reader.peek(&self.0)
     }
 }
 
