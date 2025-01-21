@@ -107,7 +107,9 @@ impl<'a, 'b> Reader<'a, 'b> {
 
     /// Eat a token
     pub fn eat<T: Tokenizer>(&mut self, tokenizer: T) -> Result<()> {
-        let _ = self.parse(tokenizer)?;
-        Ok(())
+        self.cursor.child(|cursor| {
+            let mut reader = Reader { cursor };
+            tokenizer.eat(&mut reader)
+        })
     }
 }

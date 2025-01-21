@@ -18,6 +18,10 @@ impl Tokenizer for Bool {
         Ok(item)
     }
 
+    fn eat(&self, reader: &mut Reader<'_, '_>) -> Result<(), Error> {
+        reader.eat(Or("true", "false"))
+    }
+
     fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
         reader.peek(any!("true", "false"))
     }

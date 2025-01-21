@@ -57,6 +57,26 @@ where
         Ok(Item::new(output, Span::new(start, end)))
     }
 
+    fn eat(&self, reader: &mut Reader<'_, '_>) -> Result<(), Error> {
+        reader.eat(&self.item)?;
+
+        loop {
+            if reader.eof() || !reader.peek(&self.punct)? {
+                break;
+            }
+
+            reader.eat(&self.punct)?;
+
+            if self.trailing && (reader.eof() || !reader.peek(&self.item)?) {
+                break;
+            }
+
+            reader.eat(&self.item)?;
+        }
+
+        Ok(())
+    }
+
     fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
         reader.peek(&self.item)
     }

@@ -9,6 +9,12 @@ pub trait Tokenizer {
     type Token<'a>;
 
     fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error>;
+
+    fn eat(&self, reader: &mut Reader<'_, '_>) -> Result<(), Error> {
+        let _ = self.to_token(reader)?;
+        Ok(())
+    }
+
     fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
         Ok(self.to_token(reader).is_ok())
     }
@@ -23,6 +29,10 @@ where
         (*self).to_token(reader)
     }
 
+    fn eat(&self, reader: &mut Reader<'_, '_>) -> Result<(), Error> {
+        (*self).eat(reader)
+    }
+
     fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
         (*self).peek(reader)
     }
@@ -35,6 +45,10 @@ where
     type Token<'a> = T::Token<'a>;
     fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
         (**self).to_token(reader)
+    }
+
+    fn eat(&self, reader: &mut Reader<'_, '_>) -> Result<(), Error> {
+        (**self).eat(reader)
     }
 
     fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
@@ -106,6 +120,13 @@ where
         }
     }
 
+    fn eat(&self, reader: &mut Reader<'_, '_>) -> Result<(), Error> {
+        match self {
+            Self::Left(left) => left.eat(reader),
+            Self::Right(right) => right.eat(reader),
+        }
+    }
+
     fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
         match self {
             Self::Left(left) => left.peek(reader),
@@ -155,28 +176,15 @@ impl<'lit> Tokenizer for &'lit str {
 
         let start = reader.position();
 
-        let line_no = reader.line_no();
-        let col_no = reader.col_no();
-
         for token in tokens {
             let next = reader.eat_ch()?;
             if token != next {
-                return Err(Error::new(
-                    self.to_string(),
-                    reader.position(),
-                    line_no,
-                    col_no,
-                ));
+                return Err(reader.error(self.to_string()));
             }
         }
 
         if start == reader.position() {
-            return Err(Error::new(
-                self.to_string(),
-                reader.position(),
-                line_no,
-                col_no,
-            ));
+            return Err(reader.error(self.to_string()));
         }
 
         Ok(Span {
@@ -242,6 +250,7 @@ impl Tokenizer for EOF {
             Err(reader.error("expected eof"))
         }
     }
+
     fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
         Ok(reader.eof())
     }
@@ -270,6 +279,16 @@ impl Tokenizer for Digit {
         Ok(ch.chars().next().unwrap().to_digit(self.0).unwrap())
     }
 
+    fn eat(&self, reader: &mut Reader<'_, '_>) -> Result<(), Error> {
+        let ch = reader.eat_ch()?;
+
+        if !ch.is_digit(self.0) {
+            return Err(reader.error("expected digit"));
+        }
+
+        Ok(())
+    }
+
     fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
         let Some(ch) = reader.peek_ch() else {
             return Ok(false);
@@ -293,6 +312,11 @@ impl Tokenizer for Char {
             value: ch,
             span: Span { start, end },
         })
+    }
+
+    fn eat(&self, reader: &mut Reader<'_, '_>) -> Result<(), Error> {
+        let _ = reader.eat_ch()?;
+        Ok(())
     }
 
     fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
@@ -366,6 +390,11 @@ where
         Ok(reader.parse(&self.0).ok())
     }
 
+    fn eat(&self, reader: &mut Reader<'_, '_>) -> Result<(), Error> {
+        reader.eat(&self.0).ok();
+        Ok(())
+    }
+
     fn peek(&self, _reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
         Ok(true)
     }
@@ -433,6 +462,19 @@ where
         Ok(output)
     }
 
+    fn eat(&self, reader: &mut Reader<'_, '_>) -> Result<(), Error> {
+        reader.eat(&self.0)?;
+
+        loop {
+            match reader.eat(&self.0) {
+                Ok(_) => continue,
+                Err(_) => break,
+            };
+        }
+
+        Ok(())
+    }
+
     fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
         reader.peek(&self.0)
     }
@@ -460,6 +502,16 @@ where
         }
 
         Ok(output)
+    }
+
+    fn eat(&self, reader: &mut Reader<'_, '_>) -> Result<(), Error> {
+        loop {
+            match reader.eat(&self.0) {
+                Ok(_) => continue,
+                Err(_) => break,
+            };
+        }
+        Ok(())
     }
 
     fn peek(&self, _reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
@@ -543,6 +595,10 @@ where
         reader.parse(&self.0)
     }
 
+    fn eat(&self, reader: &mut Reader<'_, '_>) -> Result<(), Error> {
+        reader.eat(&self.0)
+    }
+
     fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
         Ok(self.to_token(reader).is_ok())
     }
@@ -568,6 +624,10 @@ macro_rules! tokenizer {
                 reader.parse(&self.0)
             }
 
+            fn eat<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<(), Error> {
+                reader.eat(&self.0)
+            }
+
             fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
                 Ok(reader.peek(&self.0)?)
             }
@@ -588,6 +648,18 @@ macro_rules! tokenizer {
                         reader.parse(&$rest)?
                     ),*
                 ))
+            }
+
+            #[allow(non_snake_case)]
+            fn eat<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<(), Error> {
+                let ($first, $($rest),*) = self;
+
+                reader.eat(&$first)?;
+                $(
+                    reader.eat(&$rest)?;
+                )*
+
+                Ok(())
             }
 
             fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
