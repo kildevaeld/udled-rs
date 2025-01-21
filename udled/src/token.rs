@@ -557,6 +557,10 @@ where
         let end = reader.position();
         Ok(Span { start, end })
     }
+
+    fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
+        reader.peek(&self.0)
+    }
 }
 
 /// Match anything but T
