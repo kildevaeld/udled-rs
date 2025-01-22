@@ -1,6 +1,6 @@
 [package]
 name = "udled-tokenizers"
-version = "0.0.1"
+version = "0.0.2"
 
 edition.workspace = true
 license.workspace = true
@@ -12,5 +12,11 @@ repository.workspace = true
 readme = "README.md"
 description = "Tokenizers for udled"
 
+[features]
+serde = ["dep:serde"]
+
 [dependencies]
 udled = { path = "../udled", version = "0.2" }
+serde = { version = "1", default-features = false, features = [
+    "derive",
+], optional = true }
