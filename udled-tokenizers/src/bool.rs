@@ -41,5 +41,6 @@ mod test {
 
         assert_eq!(a.value, true);
         assert_eq!(b.value, false);
+        assert!(input.eos())
     }
 }

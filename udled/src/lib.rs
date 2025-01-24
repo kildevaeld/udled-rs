@@ -19,3 +19,6 @@ pub use self::{
     either::Either, error::Error, input::Input, lexeme::*, reader::Reader, span::*,
     string::StringExt, token::Tokenizer,
 };
+
+#[cfg(feature = "macros")]
+pub use udled_macros::*;

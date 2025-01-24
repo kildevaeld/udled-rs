@@ -6,6 +6,7 @@ use crate::{
 };
 use alloc::borrow::Cow;
 
+#[derive(Debug, Clone)]
 pub struct Input<'a> {
     pub(super) buffer: Buffer<'a>,
     pub(super) next_idx: usize,

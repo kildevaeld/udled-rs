@@ -3,6 +3,7 @@ use unicode_segmentation::UnicodeSegmentation;
 
 use crate::Error;
 
+#[derive(Debug, Clone)]
 pub struct Buffer<'input> {
     input: &'input str,
     graph: Vec<(usize, &'input str)>,
