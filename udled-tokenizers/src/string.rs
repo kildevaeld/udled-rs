@@ -59,4 +59,12 @@ mod test {
         assert_eq!(str.value, "");
         assert_eq!(str.span, Span::new(0, 2));
     }
+
+    #[test]
+    fn string() {
+        let mut input = Input::new(r#""Hello, World!""#);
+        let str = input.parse(Str).unwrap();
+        assert_eq!(str.value, "Hello, World!");
+        assert_eq!(str.span, Span::new(0, 15));
+    }
 }
