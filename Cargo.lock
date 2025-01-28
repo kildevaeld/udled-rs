@@ -106,7 +106,7 @@ dependencies = [
 
 [[package]]
 name = "udled"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "serde",
  "udled-macros",
@@ -125,7 +125,7 @@ dependencies = [
 
 [[package]]
 name = "udled-tokenizers"
-version = "0.0.2"
+version = "0.1.0"
 dependencies = [
  "serde",
  "udled",
