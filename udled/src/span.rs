@@ -209,4 +209,10 @@ mod test {
         assert_eq!(span!(0, 1), span!(0, 1) + span!(0, 0));
         assert_eq!(span!(0, 1), span!(0, 0) + span!(0, 1));
     }
+
+    #[test]
+    fn slice() {
+        assert_eq!(span!(0, 2).slice("test"), Some("te"));
+        assert_eq!(span!(0, 2).slice("te"), Some("te"));
+    }
 }

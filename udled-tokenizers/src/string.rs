@@ -32,7 +32,7 @@ impl Tokenizer for Str {
         let span = start + end;
 
         let str = if span.len() == 2 {
-            Span::new(span.start + 1, span.end).slice(reader.source())
+            Some("")
         } else {
             Span::new(span.start + 1, span.end - 1).slice(reader.source())
         };
@@ -42,5 +42,21 @@ impl Tokenizer for Str {
 
     fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
         reader.peek('"')
+    }
+}
+
+#[cfg(test)]
+mod test {
+
+    use udled::Input;
+
+    use super::*;
+
+    #[test]
+    fn empty_string() {
+        let mut input = Input::new(r#""""#);
+        let str = input.parse(Str).unwrap();
+        assert_eq!(str.value, "");
+        assert_eq!(str.span, Span::new(0, 2));
     }
 }
