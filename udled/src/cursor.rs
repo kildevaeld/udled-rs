@@ -89,7 +89,7 @@ impl<'a, 'input> Cursor<'a, 'input> {
                 self.buffer
                     .graph
                     .last()
-                    .map(|m| m.0 + 1)
+                    .map(|m| m.0 + m.1.len())
                     .unwrap_or_default(),
             )
     }
