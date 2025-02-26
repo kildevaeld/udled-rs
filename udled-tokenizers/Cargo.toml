@@ -16,6 +16,7 @@ description = "Tokenizers for udled"
 serde = ["dep:serde"]
 
 [dependencies]
+unicode-segmentation = "1"
 udled = { path = "../udled", version = "0.3" }
 serde = { version = "1", default-features = false, features = [
     "derive",
