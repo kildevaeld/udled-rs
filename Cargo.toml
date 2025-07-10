@@ -1,6 +1,6 @@
 [workspace]
 
-resolver = "2"
+resolver = "3"
 
 members = ["udled", "udled-macros", "udled-tokenizers"]
 
@@ -11,3 +11,4 @@ categories = ["parsing", "no-std"]
 authors = ["Rasmus Kildevæld <rasmuskildevaeld@gmail.com>"]
 repository = "https://github.com/kildevaeld/udled-rs"
 license = "MIT"
+rust-version = "1.81.0"
