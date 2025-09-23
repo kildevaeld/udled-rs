@@ -16,10 +16,12 @@ mod traits;
 pub use self::{
     buffer::{Buffer, BufferItem},
     cursor::Cursor,
+    either::Either,
     error::*,
     input::Input,
     item::Item,
     reader::Reader,
-    tokenizer::{Char, Digit, Peek, Tokenizer},
+    span::*,
+    tokenizer::{Char, Digit, Many, Opt, Peek, Tokenizer, EOF},
     traits::*,
 };

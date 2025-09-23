@@ -148,3 +148,29 @@ impl AsChar for u32 {
         char::from_u32(*self)
     }
 }
+
+pub trait AsBytes<'a> {
+    fn as_bytes(&self) -> &'a [u8];
+}
+
+impl<'a> AsBytes<'a> for &'a str {
+    fn as_bytes(&self) -> &'a [u8] {
+        (*self).as_bytes()
+    }
+}
+
+impl<'a> AsBytes<'a> for &'a [u8] {
+    fn as_bytes(&self) -> &'a [u8] {
+        self
+    }
+}
+
+pub trait AsStr<'a>: AsBytes<'a> {
+    fn as_str(&self) -> &'a str;
+}
+
+impl<'a> AsStr<'a> for &'a str {
+    fn as_str(&self) -> &'a str {
+        self
+    }
+}
