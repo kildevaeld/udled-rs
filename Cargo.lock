@@ -135,6 +135,9 @@ dependencies = [
 [[package]]
 name = "udled2"
 version = "0.1.0"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "unicode-ident"

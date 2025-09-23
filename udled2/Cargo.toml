@@ -9,4 +9,8 @@ repository.workspace = true
 license.workspace = true
 rust-version.workspace = true
 
+[features]
+serde = ["dep:serde"]
+
 [dependencies]
+serde = { version = "1", features = ["derive"], optional = true }
