@@ -1,11 +1,12 @@
 use core::fmt;
 
-use alloc::{boxed::Box, string::String};
+use alloc::{boxed::Box, vec::Vec};
 
 #[derive(Debug)]
 pub struct Error {
     position: usize,
     message: Box<dyn core::error::Error + Send + Sync>,
+    errors: Vec<Error>,
 }
 
 impl Error {
@@ -16,7 +17,24 @@ impl Error {
         Error {
             position,
             message: msg.into(),
+            errors: Vec::new(),
         }
+    }
+
+    pub fn new_with<T: Into<Box<dyn core::error::Error + Send + Sync>>>(
+        position: usize,
+        msg: T,
+        errors: Vec<Error>,
+    ) -> Error {
+        Error {
+            position,
+            message: msg.into(),
+            errors,
+        }
+    }
+
+    pub fn position(&self) -> usize {
+        self.position
     }
 }
 
@@ -26,6 +44,10 @@ impl fmt::Display for Error {
     }
 }
 
-impl core::error::Error for Error {}
+impl core::error::Error for Error {
+    fn cause(&self) -> Option<&dyn core::error::Error> {
+        Some(&*self.message)
+    }
+}
 
 pub type Result<T> = core::result::Result<T, Error>;

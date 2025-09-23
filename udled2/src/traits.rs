@@ -1,4 +1,4 @@
-use crate::Error;
+use crate::Span;
 
 mod sealed {
 
@@ -172,5 +172,17 @@ pub trait AsStr<'a>: AsBytes<'a> {
 impl<'a> AsStr<'a> for &'a str {
     fn as_str(&self) -> &'a str {
         self
+    }
+}
+
+pub trait AsSlice<'a> {
+    type Slice;
+    fn sliced(&self, span: Span) -> Option<Self::Slice>;
+}
+
+impl<'a> AsSlice<'a> for &'a str {
+    type Slice = &'a str;
+    fn sliced(&self, span: Span) -> Option<Self::Slice> {
+        span.slice(self)
     }
 }

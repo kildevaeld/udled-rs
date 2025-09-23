@@ -1,4 +1,4 @@
-use alloc::boxed::Box;
+use alloc::{boxed::Box, vec::Vec};
 
 use crate::{
     buffer::Buffer,
@@ -23,6 +23,14 @@ where
 {
     pub fn error<T: Into<Box<dyn core::error::Error + Send + Sync>>>(&self, error: T) -> Error {
         Error::new(self.cursor.position(), error)
+    }
+
+    pub fn error_with<T: Into<Box<dyn core::error::Error + Send + Sync>>>(
+        &self,
+        error: T,
+        errors: Vec<Error>,
+    ) -> Error {
+        Error::new_with(self.cursor.position(), error, errors)
     }
 
     pub fn position(&self) -> usize {

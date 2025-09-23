@@ -1,5 +1,6 @@
 use udled2::{
-    AsBytes, AsChar, AsStr, Buffer, Digit, Either, Input, Item, Many, Opt, Reader, Span, Tokenizer,
+    AsBytes, AsChar, AsSlice, AsStr, Buffer, Digit, Either, Error, Input, Item, Many, Opt, Parser,
+    PunctuatedList, Puntuated, PuntuatedItem, Reader, Sliced, Span, Spanned, Tokenizer,
 };
 
 fn comma<'input, S>(reader: &mut Reader<'_, 'input, S>) -> udled2::Result<Item<char>>
@@ -14,13 +15,43 @@ const BRACKET_CLOSE: char = '}';
 const COMMA: char = ',';
 const BRACE_OPEN: char = '[';
 const BRACE_CLOSE: char = ']';
-const WS: Opt<Many<char>> = Opt(Many(' '));
+const WS: Spanned<Opt<Many<char>>> = Spanned(Opt(Many(' ')));
+
+fn ws<'input, B>(
+    reader: &mut Reader<'_, 'input, B>,
+) -> Result<Option<Item<<B::Source as AsSlice<'input>>::Slice>>, Error>
+where
+    B: Buffer<'input>,
+    B::Item: AsChar,
+    B::Source: AsSlice<'input>,
+{
+    reader.parse(Opt(Sliced(Many(' '))))
+}
+
+fn array<'input, B>(
+    reader: &mut Reader<'_, 'input, B>,
+) -> Result<Item<PunctuatedList<Item<i128>, (Span, Item<char>, Span)>>, Error>
+where
+    B: Buffer<'input>,
+    B::Item: AsChar,
+    B::Source: AsSlice<'input> + AsStr<'input>,
+{
+    let start = reader.parse(BRACE_OPEN)?;
+
+    let output = reader.parse(Puntuated::new(Int, (WS, COMMA, WS)))?;
+
+    reader.eat(WS)?;
+
+    let end = reader.parse(BRACE_CLOSE)?;
+
+    Ok(Item::new(start.span + end.span, output))
+}
 
 pub struct Int;
 
 impl<'input, B> Tokenizer<'input, B> for Int
 where
-    B: Buffer<'input> + 'input,
+    B: Buffer<'input>,
     B::Item: AsChar,
     B::Source: AsStr<'input>,
 {
@@ -70,13 +101,11 @@ where
 }
 
 fn main() -> udled2::Result<()> {
-    let mut input = Input::new("[-200]");
+    let mut input = Input::new("[-200 ,  440,42 ]");
 
-    input.reader().eat((BRACE_OPEN, WS))?;
-    let int = input.reader().parse(Int)?;
-    input.reader().eat((WS, BRACE_CLOSE))?;
+    let array = input.reader().parse(array.parser())?;
 
-    println!("{:?}", int);
+    println!("{:#?}", array.value);
 
     Ok(())
 }
