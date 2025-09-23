@@ -1,3 +1,5 @@
+use alloc::boxed::Box;
+
 use crate::{
     buffer::Buffer,
     cursor::Cursor,
@@ -9,13 +11,41 @@ pub struct Reader<'a, 'input, B> {
     cursor: Cursor<'a, 'input, B>,
 }
 
+impl<'a, 'input, B> Reader<'a, 'input, B> {
+    pub(crate) fn new(cursor: Cursor<'a, 'input, B>) -> Reader<'a, 'input, B> {
+        Reader { cursor }
+    }
+}
+
 impl<'a, 'input, B> Reader<'a, 'input, B>
 where
     B: Buffer<'input>,
 {
+    pub fn error<T: Into<Box<dyn core::error::Error + Send + Sync>>>(&self, error: T) -> Error {
+        Error::new(self.cursor.position(), error)
+    }
+
+    pub fn position(&self) -> usize {
+        self.cursor.position()
+    }
+
+    pub fn buffer(&self) -> &B {
+        self.cursor.buffer()
+    }
+
     pub fn eat_ch(&mut self) -> Result<B::Item> {
         let Some(ch) = self.cursor.eat() else { todo!() };
         Ok(ch.item)
+    }
+
+    /// Peek char at current position
+    pub fn peek_ch(&mut self) -> Option<B::Item> {
+        self.cursor.peek().map(|m| m.item)
+    }
+
+    /// Peek char at n position relative to current position
+    pub fn peek_chn(&mut self, peek: usize) -> Option<B::Item> {
+        self.cursor.peekn(peek).map(|m| m.item)
     }
 
     pub fn peek<T: Tokenizer<'input, B>>(&mut self, tokenizer: T) -> bool {

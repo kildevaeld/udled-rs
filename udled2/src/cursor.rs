@@ -11,6 +11,16 @@ pub struct Cursor<'a, 'input, B> {
     life: PhantomData<&'input ()>,
 }
 
+impl<'a, 'input, B> Cursor<'a, 'input, B> {
+    pub fn new(index: &'a mut usize, buffer: &'a B) -> Cursor<'a, 'input, B> {
+        Cursor {
+            index,
+            buffer,
+            life: PhantomData,
+        }
+    }
+}
+
 impl<'a, 'input, B> Cursor<'a, 'input, B>
 where
     B: Buffer<'input>,
@@ -84,5 +94,9 @@ where
         };
 
         func(child)
+    }
+
+    pub fn buffer(&self) -> &B {
+        self.buffer
     }
 }

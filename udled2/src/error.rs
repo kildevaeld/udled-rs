@@ -1,13 +1,27 @@
 use core::fmt;
 
+use alloc::{boxed::Box, string::String};
+
 #[derive(Debug)]
 pub struct Error {
     position: usize,
-    message: String,
+    message: Box<dyn core::error::Error + Send + Sync>,
+}
+
+impl Error {
+    pub fn new<T: Into<Box<dyn core::error::Error + Send + Sync>>>(
+        position: usize,
+        msg: T,
+    ) -> Error {
+        Error {
+            position,
+            message: msg.into(),
+        }
+    }
 }
 
 impl fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         todo!()
     }
 }

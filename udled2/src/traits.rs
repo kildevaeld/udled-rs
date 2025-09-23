@@ -1,3 +1,5 @@
+use crate::Error;
+
 mod sealed {
 
     pub trait Sealed {}
@@ -122,5 +124,27 @@ impl LineBreak for char {
         } else {
             0
         }
+    }
+}
+
+pub trait AsChar {
+    fn as_char(&self) -> Option<char>;
+}
+
+impl AsChar for char {
+    fn as_char(&self) -> Option<char> {
+        Some(*self)
+    }
+}
+
+impl AsChar for u8 {
+    fn as_char(&self) -> Option<char> {
+        Some(*self as _)
+    }
+}
+
+impl AsChar for u32 {
+    fn as_char(&self) -> Option<char> {
+        char::from_u32(*self)
     }
 }
