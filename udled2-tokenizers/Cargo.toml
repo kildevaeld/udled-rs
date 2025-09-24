@@ -1,0 +1,13 @@
+[package]
+name = "udled2-tokenizers"
+version = "0.1.0"
+edition.workspace = true
+keywords.workspace = true
+categories.workspace = true
+authors.workspace = true
+repository.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+udled2 = { path = "../udled2" }

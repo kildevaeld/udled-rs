@@ -47,7 +47,7 @@ fn byte_to_line(input: &str, pos: usize) -> Option<Location> {
     Some(Location { line, column: row })
 }
 
-pub(crate) const fn is_utf8_char_boundary(this: u8) -> bool {
-    // This is bit magic equivalent to: b < 128 || b >= 192
-    (this as i8) >= -0x40
-}
+// pub(crate) const fn is_utf8_char_boundary(this: u8) -> bool {
+//     // This is bit magic equivalent to: b < 128 || b >= 192
+//     (this as i8) >= -0x40
+// }

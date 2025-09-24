@@ -1,9 +1,9 @@
-use udled2::{Digit, Input, Or, Parser, Reader, TokenizerExt};
+use udled2::{Digit, Input, Parser, Reader, TokenizerExt};
 
 fn date<'input>(reader: &mut Reader<'_, 'input, &'input [u8]>) -> udled2::Result<(u16, u8, u8)> {
-    let digit = Digit::default().map(|m| m.value);
+    let digit = Digit::default();
 
-    let year = reader.parse((&digit).repeat(4).map(|m| m.value).into_integer(10))?;
+    let year = reader.parse((&digit, &digit, &digit, &digit).into_integer(10))?;
 
     reader.eat('-')?;
 
@@ -17,7 +17,7 @@ fn date<'input>(reader: &mut Reader<'_, 'input, &'input [u8]>) -> udled2::Result
 }
 
 fn time<'input>(reader: &mut Reader<'_, 'input, &'input [u8]>) -> udled2::Result<(u8, u8, u8)> {
-    let digit = Digit::default().map(|m| m.value);
+    let digit = Digit::default();
 
     let parser = (&digit, &digit).into_integer(10);
 

@@ -2,7 +2,7 @@ use core::marker::PhantomData;
 
 use alloc::vec::Vec;
 
-use crate::{AsDigits, Buffer, Item, Many, Or, Span, Tokenizer};
+use crate::{AsDigits, Buffer, Item, Many, Opt, Or, Puntuated, Span, Spanned, Tokenizer};
 
 pub trait TokenizerExt<'input, B>: Tokenizer<'input, B>
 where
@@ -31,11 +31,11 @@ where
         }
     }
 
-    fn many(self) -> Many<Self>
+    fn many(self) -> Many<Self, B>
     where
         Self: Sized,
     {
-        Many(self)
+        Many::new(self)
     }
 
     fn or<T>(self, other: T) -> Or<Self, T, B>
@@ -44,6 +44,20 @@ where
         T: Tokenizer<'input, B>,
     {
         Or::new(self, other)
+    }
+
+    fn optional(self) -> Opt<Self, B>
+    where
+        Self: Sized,
+    {
+        Opt::new(self)
+    }
+
+    fn spanned(self) -> Spanned<Self, B>
+    where
+        Self: Sized,
+    {
+        Spanned::new(self)
     }
 
     fn into_integer(self, base: u32) -> IntoInteger<Self, B>
@@ -56,6 +70,14 @@ where
             base,
             ph: PhantomData,
         }
+    }
+
+    fn punctuated<P>(self, punct: P) -> Puntuated<Self, P>
+    where
+        Self: Sized,
+        P: Tokenizer<'input, B>,
+    {
+        Puntuated::new(self, punct)
     }
 }
 

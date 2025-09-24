@@ -1,12 +1,7 @@
-use alloc::{fmt, format, string::ToString, vec, vec::Vec};
+use alloc::{fmt, format, string::ToString};
 
 use crate::{
-    buffer::{Buffer, StringBuffer},
-    error::Error,
-    item::Item,
-    reader::Reader,
-    span::Span,
-    AsBytes, AsChar, AsSlice, AsStr, Either, WithSpan,
+    buffer::Buffer, error::Error, item::Item, reader::Reader, span::Span, AsBytes, AsChar, AsSlice,
 };
 
 pub trait Tokenizer<'input, B: Buffer<'input>> {
@@ -57,118 +52,6 @@ where
         } else {
             Err(reader.error(format!("{}", self)))
         }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Peek<T>(pub T);
-
-impl<'input, T, B> Tokenizer<'input, B> for Peek<T>
-where
-    T: Tokenizer<'input, B>,
-    B: Buffer<'input>,
-{
-    type Token = T::Token;
-
-    fn to_token(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
-        self.0.to_token(reader)
-    }
-
-    fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        self.to_token(reader).is_ok()
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct Many<T>(pub T);
-impl<'input, T, B> Tokenizer<'input, B> for Many<T>
-where
-    B: Buffer<'input>,
-    T: Tokenizer<'input, B>,
-{
-    type Token = Item<Vec<T::Token>>;
-
-    fn to_token(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
-        let start = reader.position();
-        let first = reader.parse(&self.0)?;
-        let mut output = vec![first];
-
-        loop {
-            let Ok(next) = reader.parse(&self.0) else {
-                break;
-            };
-            output.push(next);
-        }
-
-        let end = reader.position();
-
-        Ok(Item::new(Span::new(start, end), output))
-    }
-
-    fn eat(&self, reader: &mut Reader<'_, 'input, B>) -> Result<(), Error> {
-        reader.eat(&self.0)?;
-
-        loop {
-            if reader.eat(&self.0).is_err() {
-                break;
-            }
-        }
-
-        Ok(())
-    }
-
-    fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        self.0.peek(reader)
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct Opt<T>(pub T);
-
-impl<'input, T, B> Tokenizer<'input, B> for Opt<T>
-where
-    T: Tokenizer<'input, B>,
-    B: Buffer<'input>,
-{
-    type Token = Option<T::Token>;
-
-    fn to_token(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
-        Ok(reader.parse(&self.0).ok())
-    }
-
-    fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        true
-    }
-
-    fn eat(&self, reader: &mut Reader<'_, 'input, B>) -> Result<(), Error> {
-        let _ = self.0.eat(reader);
-        Ok(())
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct Spanned<T>(pub T);
-
-impl<'input, B, T> Tokenizer<'input, B> for Spanned<T>
-where
-    T: Tokenizer<'input, B>,
-    B: Buffer<'input>,
-{
-    type Token = Span;
-
-    fn to_token(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
-        let start = reader.position();
-        self.0.eat(reader)?;
-        let end = reader.position();
-        Ok(Span::new(start, end))
-    }
-
-    fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        self.0.peek(reader)
-    }
-
-    fn eat(&self, reader: &mut Reader<'_, 'input, B>) -> Result<(), Error> {
-        self.0.eat(reader)
     }
 }
 
@@ -247,6 +130,41 @@ where
     }
 }
 
+impl<'input, B> Tokenizer<'input, B> for core::ops::Range<char>
+where
+    B: Buffer<'input>,
+    B::Item: AsChar,
+{
+    type Token = Item<char>;
+
+    fn to_token<'a>(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
+        let char = reader.parse(Char)?;
+
+        if !self.contains(&char.value) {
+            return Err(reader.error(format!("Expected char in range: {:?}", self)));
+        }
+        Ok(char)
+    }
+}
+
+impl<'input, B> Tokenizer<'input, B> for core::ops::RangeInclusive<char>
+where
+    B: Buffer<'input>,
+    B::Item: AsChar,
+{
+    type Token = Item<char>;
+
+    fn to_token<'a>(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
+        let char = reader.parse(Char)?;
+
+        if !self.contains(&char.value) {
+            return Err(reader.error(format!("Expected char in range: {:?}", self)));
+        }
+
+        Ok(char)
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct EOF;
 
@@ -309,85 +227,6 @@ where
 
     fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
         self.to_token(reader).is_ok()
-    }
-}
-
-// /// Match either L or R
-// #[derive(Debug, Clone, Copy, Default)]
-// pub struct Or<L, R>(pub L, pub R);
-
-// impl<'input, L, R, B> Tokenizer<'input, B> for Or<L, R>
-// where
-//     L: Tokenizer<'input, B>,
-//     R: Tokenizer<'input, B>,
-//     B: Buffer<'input>,
-// {
-//     type Token = Either<L::Token, R::Token>;
-//     fn to_token<'a>(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
-//         let left_err = match reader.parse(&self.0) {
-//             Ok(ret) => return Ok(Either::Left(ret)),
-//             Err(err) => err,
-//         };
-
-//         let right_err = match reader.parse(&self.1) {
-//             Ok(ret) => return Ok(Either::Right(ret)),
-//             Err(err) => err,
-//         };
-
-//         Err(reader.error_with("either", vec![left_err, right_err]))
-//     }
-
-//     fn eat(&self, reader: &mut Reader<'_, 'input, B>) -> Result<(), Error> {
-//         let left_err = match reader.eat(&self.0) {
-//             Ok(_) => return Ok(()),
-//             Err(err) => err,
-//         };
-
-//         let right_err = match reader.eat(&self.1) {
-//             Ok(_) => return Ok(()),
-//             Err(err) => err,
-//         };
-
-//         Err(reader.error_with("either", vec![left_err, right_err]))
-//     }
-
-//     fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-//         reader.peek(&self.0) || reader.peek(&self.1)
-//     }
-// }
-
-impl<'input, B> Tokenizer<'input, B> for core::ops::Range<char>
-where
-    B: Buffer<'input>,
-    B::Item: AsChar,
-{
-    type Token = Item<char>;
-
-    fn to_token<'a>(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
-        let char = reader.parse(Char)?;
-
-        if !self.contains(&char.value) {
-            return Err(reader.error(format!("Expected char in range: {:?}", self)));
-        }
-        Ok(char)
-    }
-}
-
-impl<'input, B> Tokenizer<'input, B> for core::ops::RangeInclusive<char>
-where
-    B: Buffer<'input>,
-    B::Item: AsChar,
-{
-    type Token = Item<char>;
-
-    fn to_token<'a>(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
-        let char = reader.parse(Char)?;
-
-        if !self.contains(&char.value) {
-            return Err(reader.error(format!("Expected char in range: {:?}", self)));
-        }
-
-        Ok(char)
     }
 }
 
@@ -455,79 +294,24 @@ where
     }
 }
 
-// #[derive(Debug, Clone, Copy)]
-// pub enum PuntuatedItem<T, P> {
-//     Item(T),
-//     Punct(P),
-// }
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Peek<T>(pub T);
 
-// impl<T: WithSpan, P: WithSpan> WithSpan for PuntuatedItem<T, P> {
-//     fn span(&self) -> Span {
-//         match self {
-//             PuntuatedItem::Item(item) => item.span(),
-//             PuntuatedItem::Punct(punct) => punct.span(),
-//         }
-//     }
-// }
+impl<'input, T, B> Tokenizer<'input, B> for Peek<T>
+where
+    T: Tokenizer<'input, B>,
+    B: Buffer<'input>,
+{
+    type Token = T::Token;
 
-// #[derive(Debug, Clone, Copy)]
-// pub struct Puntuated<T, P> {
-//     item: T,
-//     punct: P,
-//     non_empty: bool,
-// }
+    fn to_token(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
+        self.0.to_token(reader)
+    }
 
-// impl<T, P> Puntuated<T, P> {
-//     pub fn new(item: T, punct: P) -> Puntuated<T, P> {
-//         Puntuated {
-//             item,
-//             punct,
-//             non_empty: false,
-//         }
-//     }
-// }
-
-// impl<'input, T, P, B> Tokenizer<'input, B> for Puntuated<T, P>
-// where
-//     B: Buffer<'input>,
-//     T: Tokenizer<'input, B>,
-//     P: Tokenizer<'input, B>,
-// {
-//     type Token = Item<Vec<PuntuatedItem<T::Token, P::Token>>>;
-
-//     fn to_token(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
-//         let start = reader.position();
-//         let mut output = Vec::new();
-
-//         if self.non_empty {
-//             let item = reader.parse(&self.item)?;
-//             output.push(PuntuatedItem::Item(item));
-//             if reader.peek(Prefix(&self.punct, &self.item)) {
-//                 let punct = reader.parse(&self.punct)?;
-//                 output.push(PuntuatedItem::Punct(punct));
-//             }
-//         }
-
-//         loop {
-//             if !reader.peek(&self.item) {
-//                 break;
-//             }
-
-//             let item = reader.parse(&self.item)?;
-
-//             output.push(PuntuatedItem::Item(item));
-
-//             if reader.peek(Prefix(&self.punct, &self.item)) {
-//                 let punct = reader.parse(&self.punct)?;
-//                 output.push(PuntuatedItem::Punct(punct));
-//             }
-//         }
-
-//         let end = reader.position();
-
-//         Ok(Item::new(Span::new(start, end), output))
-//     }
-// }
+    fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
+        self.to_token(reader).is_ok()
+    }
+}
 
 macro_rules! tuples {
     ($first: ident) => {

@@ -15,7 +15,6 @@ const BRACKET_CLOSE: char = '}';
 const COMMA: char = ',';
 const BRACE_OPEN: char = '[';
 const BRACE_CLOSE: char = ']';
-const WS: Spanned<Opt<Many<char>>> = Spanned(Opt(Many(' ')));
 
 fn whitespace<'input, B>(reader: &mut Reader<'_, 'input, B>) -> Result<Span, Error>
 where
@@ -23,7 +22,7 @@ where
     B::Item: AsChar,
     B::Source: AsSlice<'input>,
 {
-    reader.parse(Spanned(Opt(' '.or('\n').many())))
+    reader.parse(' '.or('\n').many().optional().spanned())
 }
 
 fn array<'input, B>(
@@ -39,7 +38,7 @@ where
 
     let output = reader.parse(Puntuated::new(Int, (&ws, COMMA, &ws)))?;
 
-    reader.eat(WS)?;
+    reader.eat(&ws)?;
 
     let end = reader.parse(BRACE_CLOSE)?;
 

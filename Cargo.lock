@@ -140,6 +140,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "udled2-tokenizers"
+version = "0.1.0"
+dependencies = [
+ "udled2",
+]
+
+[[package]]
 name = "unicode-ident"
 version = "1.0.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"

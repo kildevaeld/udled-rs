@@ -37,11 +37,16 @@ where
     }
 
     fn peek(&self, reader: &mut Reader<'_, 'input, S>) -> bool {
-        let iter = [20].into_iter();
         match reader.peek_ch().and_then(|m| m.as_char()) {
             Some(char) => char.is_digit(self.0),
             None => false,
         }
+    }
+}
+
+impl From<Item<u32>> for u32 {
+    fn from(value: Item<u32>) -> Self {
+        value.value
     }
 }
 

@@ -10,9 +10,11 @@ mod ext;
 mod input;
 mod item;
 mod location;
+mod macros;
 mod parser;
 mod reader;
 mod span;
+mod streaming;
 mod tokenizer;
 mod traits;
 
@@ -31,7 +33,7 @@ pub use self::{
     location::Location,
     reader::Reader,
     span::*,
-    tokenizer::{Char, Many, Not, Opt, Peek, Prefix, Sliced, Spanned, Test, Tokenizer, EOF},
+    tokenizer::{Char, Not, Peek, Prefix, Sliced, Test, Tokenizer, EOF},
     tokenizers::*,
     traits::*,
 };

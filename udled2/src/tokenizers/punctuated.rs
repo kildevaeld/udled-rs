@@ -58,7 +58,7 @@ pub struct Puntuated<T, P> {
 }
 
 impl<T, P> Puntuated<T, P> {
-    pub fn new(item: T, punct: P) -> Puntuated<T, P> {
+    pub const fn new(item: T, punct: P) -> Puntuated<T, P> {
         Puntuated {
             item,
             punct,

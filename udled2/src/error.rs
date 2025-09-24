@@ -40,7 +40,21 @@ impl Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        todo!()
+        if self.errors.is_empty() {
+            write!(f, "@{}: {}", self.position, self.message)
+        } else {
+            write!(f, "@{}: {}, errors: ", self.position, self.message)?;
+
+            for (k, v) in self.errors.iter().enumerate() {
+                if k > 0 {
+                    write!(f, ", ")?;
+                }
+
+                write!(f, "{}", v)?;
+            }
+
+            Ok(())
+        }
     }
 }
 
