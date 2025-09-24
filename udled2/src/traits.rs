@@ -7,6 +7,8 @@ mod sealed {
     impl<'a> Sealed for &'a str {}
 
     impl Sealed for char {}
+
+    impl<'a> Sealed for &'a [u8] {}
 }
 
 pub trait StringExt: sealed::Sealed {
@@ -117,6 +119,14 @@ impl<'a> LineBreak for &'a str {
     }
 }
 
+impl<'a> LineBreak for &'a [u8] {
+    fn count_linebreak(&self) -> usize {
+        self.iter().fold(0, |p, c| {
+            p + if (*c as char).is_linebreak() { 1 } else { 0 }
+        })
+    }
+}
+
 impl LineBreak for char {
     fn count_linebreak(&self) -> usize {
         if self.is_linebreak() {
@@ -184,5 +194,16 @@ impl<'a> AsSlice<'a> for &'a str {
     type Slice = &'a str;
     fn sliced(&self, span: Span) -> Option<Self::Slice> {
         span.slice(self)
+    }
+}
+
+impl<'a> AsSlice<'a> for &'a [u8] {
+    type Slice = &'a [u8];
+    fn sliced(&self, span: Span) -> Option<Self::Slice> {
+        if span.end > self.len() {
+            return None;
+        }
+
+        Some(&self[span.start..span.end])
     }
 }

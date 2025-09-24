@@ -53,6 +53,28 @@ impl<'a> Buffer<'a> for StringBuffer<'a> {
     }
 }
 
+impl<'a> Buffer<'a> for &'a [u8] {
+    type Source = &'a [u8];
+
+    type Item = u8;
+
+    fn source(&self) -> Self::Source {
+        self
+    }
+
+    fn len(&self) -> usize {
+        (*self).len()
+    }
+
+    fn get(&self, idx: usize) -> Option<BufferItem<'a, Self>> {
+        (*self).get(idx).map(|item| BufferItem {
+            index: idx,
+            len: 1,
+            item: *item,
+        })
+    }
+}
+
 pub trait IntoBuffer<'a> {
     type Buffer: Buffer<'a>;
 
@@ -63,5 +85,12 @@ impl<'a> IntoBuffer<'a> for &'a str {
     type Buffer = StringBuffer<'a>;
     fn into_buffer(self) -> Self::Buffer {
         StringBuffer::new(self)
+    }
+}
+
+impl<'a> IntoBuffer<'a> for &'a [u8] {
+    type Buffer = &'a [u8];
+    fn into_buffer(self) -> Self::Buffer {
+        self
     }
 }

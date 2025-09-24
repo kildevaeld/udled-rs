@@ -6,6 +6,7 @@ mod buffer;
 mod cursor;
 mod either;
 mod error;
+mod ext;
 mod input;
 mod item;
 mod location;
@@ -24,14 +25,13 @@ pub use self::{
     cursor::Cursor,
     either::Either,
     error::*,
+    ext::TokenizerExt,
     input::Input,
     item::Item,
     location::Location,
     reader::Reader,
     span::*,
-    tokenizer::{
-        Char, Digit, Many, Not, Opt, Or, Peek, Prefix, Sliced, Spanned, Test, Tokenizer, EOF,
-    },
+    tokenizer::{Char, Many, Not, Opt, Peek, Prefix, Sliced, Spanned, Test, Tokenizer, EOF},
     tokenizers::*,
     traits::*,
 };

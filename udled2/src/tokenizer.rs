@@ -248,42 +248,6 @@ where
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct Digit(pub u32);
-
-impl Default for Digit {
-    fn default() -> Self {
-        Digit(10)
-    }
-}
-
-impl<'input, S> Tokenizer<'input, S> for Digit
-where
-    S: Buffer<'input>,
-    S::Item: AsChar,
-{
-    type Token = Item<u32>;
-
-    fn to_token(&self, reader: &mut Reader<'_, 'input, S>) -> Result<Self::Token, Error> {
-        let item = reader.parse(Char)?;
-
-        item.value
-            .to_digit(self.0)
-            .map(|value| Item {
-                span: item.span,
-                value,
-            })
-            .ok_or_else(|| reader.error("digit"))
-    }
-
-    fn peek(&self, reader: &mut Reader<'_, 'input, S>) -> bool {
-        match reader.peek_ch().and_then(|m| m.as_char()) {
-            Some(char) => char.is_digit(self.0),
-            None => false,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
 pub struct EOF;
 
 impl<'input, S> Tokenizer<'input, S> for EOF
@@ -348,49 +312,49 @@ where
     }
 }
 
-/// Match either L or R
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Or<L, R>(pub L, pub R);
+// /// Match either L or R
+// #[derive(Debug, Clone, Copy, Default)]
+// pub struct Or<L, R>(pub L, pub R);
 
-impl<'input, L, R, B> Tokenizer<'input, B> for Or<L, R>
-where
-    L: Tokenizer<'input, B>,
-    R: Tokenizer<'input, B>,
-    B: Buffer<'input>,
-{
-    type Token = Either<L::Token, R::Token>;
-    fn to_token<'a>(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
-        let left_err = match reader.parse(&self.0) {
-            Ok(ret) => return Ok(Either::Left(ret)),
-            Err(err) => err,
-        };
+// impl<'input, L, R, B> Tokenizer<'input, B> for Or<L, R>
+// where
+//     L: Tokenizer<'input, B>,
+//     R: Tokenizer<'input, B>,
+//     B: Buffer<'input>,
+// {
+//     type Token = Either<L::Token, R::Token>;
+//     fn to_token<'a>(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
+//         let left_err = match reader.parse(&self.0) {
+//             Ok(ret) => return Ok(Either::Left(ret)),
+//             Err(err) => err,
+//         };
 
-        let right_err = match reader.parse(&self.1) {
-            Ok(ret) => return Ok(Either::Right(ret)),
-            Err(err) => err,
-        };
+//         let right_err = match reader.parse(&self.1) {
+//             Ok(ret) => return Ok(Either::Right(ret)),
+//             Err(err) => err,
+//         };
 
-        Err(reader.error_with("either", vec![left_err, right_err]))
-    }
+//         Err(reader.error_with("either", vec![left_err, right_err]))
+//     }
 
-    fn eat(&self, reader: &mut Reader<'_, 'input, B>) -> Result<(), Error> {
-        let left_err = match reader.eat(&self.0) {
-            Ok(_) => return Ok(()),
-            Err(err) => err,
-        };
+//     fn eat(&self, reader: &mut Reader<'_, 'input, B>) -> Result<(), Error> {
+//         let left_err = match reader.eat(&self.0) {
+//             Ok(_) => return Ok(()),
+//             Err(err) => err,
+//         };
 
-        let right_err = match reader.eat(&self.1) {
-            Ok(_) => return Ok(()),
-            Err(err) => err,
-        };
+//         let right_err = match reader.eat(&self.1) {
+//             Ok(_) => return Ok(()),
+//             Err(err) => err,
+//         };
 
-        Err(reader.error_with("either", vec![left_err, right_err]))
-    }
+//         Err(reader.error_with("either", vec![left_err, right_err]))
+//     }
 
-    fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        reader.peek(&self.0) || reader.peek(&self.1)
-    }
-}
+//     fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
+//         reader.peek(&self.0) || reader.peek(&self.1)
+//     }
+// }
 
 impl<'input, B> Tokenizer<'input, B> for core::ops::Range<char>
 where

@@ -28,7 +28,7 @@ fn byte_to_line(input: &str, pos: usize) -> Option<Location> {
             break;
         }
 
-        let mut is_ws = char == ' ';
+        let mut is_ws = char == '\n';
         if !is_ws && char == '\r' {
             if chars.peek().map(|m| m.1) == Some('\n') {
                 let _ = chars.next();

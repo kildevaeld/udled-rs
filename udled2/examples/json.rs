@@ -1,6 +1,6 @@
 use udled2::{
-    AsBytes, AsChar, AsSlice, AsStr, Buffer, Digit, Either, Error, Input, Item, Many, Opt, Parser,
-    PunctuatedList, Puntuated, PuntuatedItem, Reader, Sliced, Span, Spanned, Tokenizer,
+    or, AsChar, AsSlice, AsStr, Buffer, Digit, Error, Input, Item, Many, Opt, Or, Parser,
+    PunctuatedList, Puntuated, Reader, Span, Spanned, Tokenizer, TokenizerExt,
 };
 
 fn comma<'input, S>(reader: &mut Reader<'_, 'input, S>) -> udled2::Result<Item<char>>
@@ -17,15 +17,13 @@ const BRACE_OPEN: char = '[';
 const BRACE_CLOSE: char = ']';
 const WS: Spanned<Opt<Many<char>>> = Spanned(Opt(Many(' ')));
 
-fn ws<'input, B>(
-    reader: &mut Reader<'_, 'input, B>,
-) -> Result<Option<Item<<B::Source as AsSlice<'input>>::Slice>>, Error>
+fn whitespace<'input, B>(reader: &mut Reader<'_, 'input, B>) -> Result<Span, Error>
 where
     B: Buffer<'input>,
     B::Item: AsChar,
     B::Source: AsSlice<'input>,
 {
-    reader.parse(Opt(Sliced(Many(' '))))
+    reader.parse(Spanned(Opt(' '.or('\n').many())))
 }
 
 fn array<'input, B>(
@@ -36,9 +34,10 @@ where
     B::Item: AsChar,
     B::Source: AsSlice<'input> + AsStr<'input>,
 {
+    let ws = whitespace.parser();
     let start = reader.parse(BRACE_OPEN)?;
 
-    let output = reader.parse(Puntuated::new(Int, (WS, COMMA, WS)))?;
+    let output = reader.parse(Puntuated::new(Int, (&ws, COMMA, &ws)))?;
 
     reader.eat(WS)?;
 
@@ -101,7 +100,7 @@ where
 }
 
 fn main() -> udled2::Result<()> {
-    let mut input = Input::new("[-200 ,  440,42 ]");
+    let mut input = Input::new("[-200 ,  440,42,\n 1000 ]");
 
     let array = input.reader().parse(array.parser())?;
 

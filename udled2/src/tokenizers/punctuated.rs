@@ -1,6 +1,6 @@
 use alloc::vec::Vec;
 
-use crate::{Buffer, Error, Item, Prefix, Reader, Span, Tokenizer, WithSpan};
+use crate::{Buffer, Error, Prefix, Reader, Span, Tokenizer, WithSpan};
 
 #[derive(Debug, Clone, Copy)]
 pub enum PuntuatedItem<T, P> {
@@ -29,6 +29,18 @@ impl<T, P> PunctuatedList<T, P> {
             PuntuatedItem::Item(item) => Some(item),
             _ => None,
         })
+    }
+
+    pub fn iter(&self) -> core::slice::Iter<'_, PuntuatedItem<T, P>> {
+        self.list.iter()
+    }
+
+    pub fn len(&self) -> usize {
+        self.list.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.list.is_empty()
     }
 }
 
