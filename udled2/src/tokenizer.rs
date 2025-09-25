@@ -1,4 +1,4 @@
-use alloc::{fmt, format, string::ToString};
+use alloc::{format, string::ToString};
 
 use crate::{
     buffer::Buffer, error::Error, item::Item, reader::Reader, span::Span, AsBytes, AsChar, AsSlice,
@@ -190,14 +190,14 @@ impl<'input, T, B> Tokenizer<'input, B> for Not<T>
 where
     T: Tokenizer<'input, B>,
     B: Buffer<'input>,
-    B::Item: fmt::Display,
+    B::Item: AsChar,
 {
     type Token = ();
 
     fn to_token<'a>(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
         if reader.peek(&self.0) {
             let ch = reader.peek_ch().ok_or_else(|| reader.error("EOF"))?;
-            return Err(reader.error(format!("unexpected token: {ch}")));
+            return Err(reader.error(format!("unexpected token: {:?}", ch.as_char())));
         }
         Ok(())
     }
@@ -226,38 +226,7 @@ where
     }
 
     fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        self.to_token(reader).is_ok()
-    }
-}
-
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Sliced<T>(pub T);
-
-impl<'input, T, B> Tokenizer<'input, B> for Sliced<T>
-where
-    T: Tokenizer<'input, B>,
-    B: Buffer<'input>,
-    B::Source: AsSlice<'input>,
-{
-    type Token = Item<<B::Source as AsSlice<'input>>::Slice>;
-
-    fn to_token(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
-        let start = reader.position();
-        self.0.eat(reader)?;
-        let end = reader.position();
-        let span = Span::new(start, end);
-        match reader.buffer().source().sliced(span) {
-            Some(slice) => Ok(Item::new(span, slice)),
-            None => Err(reader.error("Could not compute slice")),
-        }
-    }
-
-    fn eat(&self, reader: &mut Reader<'_, 'input, B>) -> Result<(), Error> {
-        self.0.eat(reader)
-    }
-
-    fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        self.0.peek(reader)
+        reader.parse(&self.0).is_ok()
     }
 }
 
@@ -280,8 +249,8 @@ where
     }
 
     fn eat(&self, reader: &mut Reader<'_, 'input, B>) -> Result<(), Error> {
-        self.0.eat(reader)?;
-        self.1.eat(reader)?;
+        reader.eat(&self.0)?;
+        reader.eat(&self.1)?;
         Ok(())
     }
 
@@ -354,9 +323,9 @@ macro_rules! tuples {
             fn to_token(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
                 let ($first, $($rest),+) = self;
                 Ok((
-                    $first.to_token(reader)?,
+                    reader.parse($first)?,
                     $(
-                        $rest.to_token(reader)?
+                        reader.parse($rest)?
                     ),+
                 ))
             }
@@ -367,9 +336,9 @@ macro_rules! tuples {
 
             fn eat(&self, reader: &mut Reader<'_, 'input, B>) -> Result<(), Error> {
                 let ($first, $($rest),+) = self;
-                $first.to_token(reader)?;
+                reader.parse($first)?;
                 $(
-                    $rest.to_token(reader)?;
+                    reader.parse($rest)?;
                 )+
                 Ok(())
             }

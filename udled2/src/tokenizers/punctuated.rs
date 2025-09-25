@@ -31,6 +31,13 @@ impl<T, P> PunctuatedList<T, P> {
         })
     }
 
+    pub fn into_items(self) -> impl Iterator<Item = T> {
+        self.list.into_iter().filter_map(|m| match m {
+            PuntuatedItem::Item(item) => Some(item),
+            _ => None,
+        })
+    }
+
     pub fn iter(&self) -> core::slice::Iter<'_, PuntuatedItem<T, P>> {
         self.list.iter()
     }

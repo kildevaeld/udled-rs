@@ -1,0 +1,137 @@
+use std::{collections::BTreeMap, process::Output};
+
+use udled2::{
+    AsChar, AsSlice, AsStr, Buffer, Error, Input, Item, Parser, Reader, Span, Test, TokenizerExt,
+};
+use udled2_tokenizers::{Bool, Float, Integer, Str};
+
+const BRACKET_OPEN: char = '{';
+const BRACKET_CLOSE: char = '}';
+const COMMA: char = ',';
+const BRACE_OPEN: char = '[';
+const BRACE_CLOSE: char = ']';
+
+fn whitespace<'input, B>(reader: &mut Reader<'_, 'input, B>) -> Result<Span, Error>
+where
+    B: Buffer<'input>,
+    B::Item: AsChar,
+    B::Source: AsSlice<'input>,
+{
+    reader.parse(' '.or('\n').many().optional().spanned())
+}
+
+fn array<'input, B>(reader: &mut Reader<'_, 'input, B>) -> Result<Value<'input>, Error>
+where
+    B: Buffer<'input>,
+    B::Item: AsChar,
+    B::Source: AsSlice<'input> + AsStr<'input>,
+    <B::Source as AsSlice<'input>>::Slice: AsStr<'input>,
+{
+    let ws = whitespace.parser();
+
+    let output = reader
+        .parse((
+            BRACE_OPEN,
+            &ws,
+            value
+                .parser()
+                .punctuated(Test((&ws, COMMA, &ws)))
+                .map(|m| m.into_items().collect::<Vec<_>>()),
+            &ws,
+            BRACE_CLOSE.map_err(|m, buffer: &B| {
+                //
+                Error::new(
+                    m.position(),
+                    format!(
+                        "Unexpected char {:?}",
+                        buffer
+                            .get(m.position() - 1)
+                            .map(|m| m.item)
+                            .and_then(|m| m.as_char())
+                    ),
+                )
+            }),
+        ))
+        .map(|m| m.2)?;
+
+    Ok(Value::List(output))
+}
+
+fn object<'input, B>(reader: &mut Reader<'_, 'input, B>) -> Result<Value<'input>, Error>
+where
+    B: Buffer<'input>,
+    B::Item: AsChar,
+    B::Source: AsSlice<'input> + AsStr<'input>,
+    <B::Source as AsSlice<'input>>::Slice: AsStr<'input>,
+{
+    let ws = whitespace.parser();
+    reader.eat(BRACKET_OPEN)?;
+
+    reader.eat(&ws)?;
+
+    let output = (Str, (&ws, ':', &ws), value.parser())
+        .punctuated(Test((&ws, COMMA, &ws)))
+        .map(|m| {
+            m.into_items()
+                .map(|m| (m.0.value, m.2))
+                .collect::<BTreeMap<_, _>>()
+        })
+        .parse(reader)?;
+
+    reader.eat(&ws)?;
+
+    reader.eat(BRACKET_CLOSE)?;
+
+    Ok(Value::Map(output))
+}
+
+fn value<'input, B>(reader: &mut Reader<'_, 'input, B>) -> udled2::Result<Value<'input>>
+where
+    B: Buffer<'input>,
+    B::Item: AsChar,
+    B::Source: AsSlice<'input> + AsStr<'input>,
+    <B::Source as AsSlice<'input>>::Slice: AsStr<'input>,
+{
+    if reader.peek(BRACE_OPEN) {
+        reader.parse(array.parser())
+    } else if reader.peek(BRACKET_OPEN) {
+        reader.parse(object.parser())
+    } else if reader.peek(Str) {
+        let str = reader.parse(Str)?;
+        Ok(Value::String(str.value))
+    } else if reader.peek(Bool) {
+        let bool = reader.parse(Bool)?;
+        Ok(Value::Bool(bool.value))
+    } else if reader.peek(Float) {
+        let float = reader.parse(Float)?;
+        Ok(Value::Float(float.value))
+    } else if reader.peek(Integer) {
+        let int = reader.parse(Integer)?;
+        Ok(Value::Int(int.value as _))
+    } else {
+        Err(reader.error("string, number, bool, object or array"))
+    }
+}
+
+#[derive(Debug)]
+pub enum Value<'a> {
+    Int(i64),
+    Float(f64),
+    String(&'a str),
+    Bool(bool),
+    List(Vec<Value<'a>>),
+    Map(BTreeMap<&'a str, Value<'a>>),
+}
+
+fn main() -> udled2::Result<()> {
+    // let mut input =
+    //     Input::new("[-200 ,  440,42,\n 1000, true, \"Hello, World!\", { \"test\": 203.02e21 } ]");
+
+    let mut input = Input::new("[wqwqw]");
+
+    let array = input.reader().parse(value.parser())?;
+
+    println!("{:#?}", array);
+
+    Ok(())
+}

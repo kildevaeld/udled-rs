@@ -51,6 +51,9 @@ where
 
     pub fn position(&self) -> usize {
         let len = self.buffer.len();
+        if len == 0 {
+            return 0;
+        }
         self.buffer.get(*self.index).map(|m| m.index).unwrap_or(
             self.buffer
                 .get(len - 1)

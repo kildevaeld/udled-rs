@@ -42,7 +42,9 @@ where
     }
 
     pub fn eat_ch(&mut self) -> Result<B::Item> {
-        let Some(ch) = self.cursor.eat() else { todo!() };
+        let Some(ch) = self.cursor.eat() else {
+            return Err(Error::new(self.position(), "EOF"));
+        };
         Ok(ch.item)
     }
 

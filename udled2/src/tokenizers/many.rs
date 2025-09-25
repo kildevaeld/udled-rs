@@ -2,7 +2,7 @@ use core::marker::PhantomData;
 
 use alloc::{fmt, vec, vec::Vec};
 
-use crate::{Buffer, Error, Item, Reader, Span, Tokenizer};
+use crate::{Buffer, Error, Item, Reader, Span, Tokenizer, EOF};
 
 pub const fn many<T, B>(tokenizer: T) -> Many<T, B> {
     Many::new(tokenizer)
@@ -54,6 +54,10 @@ where
         let mut output = vec![first];
 
         loop {
+            if reader.peek(EOF) {
+                break;
+            }
+
             let Ok(next) = reader.parse(&self.tokenizer) else {
                 break;
             };

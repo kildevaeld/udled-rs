@@ -1,6 +1,6 @@
 use crate::{span::Span, WithSpan};
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Item<T> {
     pub span: Span,
     pub value: T,

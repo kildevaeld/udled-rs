@@ -19,6 +19,10 @@ where
                 return Err(reader.error("Unexpected end of input while parsing string literal"));
             }
 
+            // if !reader.peek(('\0'..'\x1f').or('\x22').or('\x5C')) {
+            //     return;
+            // }
+
             let ch = reader.parse(Char)?;
 
             if ch.value == '"' {
@@ -45,7 +49,6 @@ where
                 .source()
                 .sliced(Span::new(span.start + 1, span.end - 1))
                 .map(|m| m.as_str())
-            // Span::new(span.start + 1, span.end - 1).slice(reader.source())
         };
 
         Ok(Item::new(span, str.unwrap()))

@@ -2,7 +2,10 @@ use core::marker::PhantomData;
 
 use alloc::vec::Vec;
 
-use crate::{AsDigits, Buffer, Item, Many, Opt, Or, Puntuated, Span, Spanned, Tokenizer};
+use crate::{
+    AsDigits, AsSlice, Buffer, Error, Item, Many, Opt, Or, Puntuated, Reader, Sliced, Span,
+    Spanned, Tokenizer,
+};
 
 pub trait TokenizerExt<'input, B>: Tokenizer<'input, B>
 where
@@ -14,6 +17,18 @@ where
         Self: Sized,
     {
         Map {
+            tokenizer: self,
+            func,
+            ph: PhantomData,
+        }
+    }
+
+    fn map_err<F>(self, func: F) -> MapErr<Self, F, B>
+    where
+        F: Fn(Error, &B) -> Error,
+        Self: Sized,
+    {
+        MapErr {
             tokenizer: self,
             func,
             ph: PhantomData,
@@ -79,6 +94,22 @@ where
     {
         Puntuated::new(self, punct)
     }
+
+    fn slice(self) -> Sliced<Self, B>
+    where
+        Self: Sized,
+        B: Buffer<'input>,
+        B::Source: AsSlice<'input>,
+    {
+        Sliced::new(self)
+    }
+
+    fn parse(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error>
+    where
+        Self: Sized,
+    {
+        reader.parse(self)
+    }
 }
 
 impl<'input, T, B> TokenizerExt<'input, B> for T
@@ -118,6 +149,40 @@ where
             Ok(ret) => Ok((self.func)(ret)),
             Err(err) => Err(err),
         }
+    }
+}
+
+pub struct MapErr<T, F, B> {
+    tokenizer: T,
+    func: F,
+    ph: PhantomData<fn(&B)>,
+}
+
+impl<'input, T, F, B> Tokenizer<'input, B> for MapErr<T, F, B>
+where
+    B: Buffer<'input>,
+    T: Tokenizer<'input, B>,
+    F: Fn(Error, &B) -> Error,
+{
+    type Token = T::Token;
+
+    fn eat(&self, reader: &mut crate::Reader<'_, 'input, B>) -> Result<(), crate::Error> {
+        self.tokenizer
+            .eat(reader)
+            .map_err(|err| (self.func)(err, reader.buffer()))
+    }
+
+    fn peek(&self, reader: &mut crate::Reader<'_, 'input, B>) -> bool {
+        self.tokenizer.peek(reader)
+    }
+
+    fn to_token(
+        &self,
+        reader: &mut crate::Reader<'_, 'input, B>,
+    ) -> Result<Self::Token, crate::Error> {
+        self.tokenizer
+            .to_token(reader)
+            .map_err(|err| (self.func)(err, reader.buffer()))
     }
 }
 

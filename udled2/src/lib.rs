@@ -33,7 +33,7 @@ pub use self::{
     location::Location,
     reader::Reader,
     span::*,
-    tokenizer::{Char, Not, Peek, Prefix, Sliced, Test, Tokenizer, EOF},
+    tokenizer::{Char, Not, Peek, Prefix, Test, Tokenizer, EOF},
     tokenizers::*,
     traits::*,
 };

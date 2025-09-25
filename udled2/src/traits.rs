@@ -108,18 +108,18 @@ impl StringExt for char {
     }
 }
 
-pub trait LineBreak: sealed::Sealed {
+pub trait LineBreaks: sealed::Sealed {
     fn count_linebreak(&self) -> usize;
 }
 
-impl<'a> LineBreak for &'a str {
+impl<'a> LineBreaks for &'a str {
     fn count_linebreak(&self) -> usize {
         self.chars()
             .fold(0, |p, c| p + if c.is_linebreak() { 1 } else { 0 })
     }
 }
 
-impl<'a> LineBreak for &'a [u8] {
+impl<'a> LineBreaks for &'a [u8] {
     fn count_linebreak(&self) -> usize {
         self.iter().fold(0, |p, c| {
             p + if (*c as char).is_linebreak() { 1 } else { 0 }
@@ -127,7 +127,7 @@ impl<'a> LineBreak for &'a [u8] {
     }
 }
 
-impl LineBreak for char {
+impl LineBreaks for char {
     fn count_linebreak(&self) -> usize {
         if self.is_linebreak() {
             1
