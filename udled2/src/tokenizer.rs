@@ -1,7 +1,7 @@
 use alloc::{format, string::ToString};
 
 use crate::{
-    buffer::Buffer, error::Error, item::Item, reader::Reader, span::Span, AsBytes, AsChar, AsSlice,
+    buffer::Buffer, error::Error, item::Item, reader::Reader, span::Span, AsBytes, AsChar,
 };
 
 pub trait Tokenizer<'input, B: Buffer<'input>> {

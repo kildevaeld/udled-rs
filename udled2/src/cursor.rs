@@ -37,15 +37,6 @@ where
         let ch = self.buffer.get(*self.index);
         *self.index += 1;
 
-        // if let Some(m) = ch.as_ref().map(|(_, m)| *m) {
-        //     if m == "\n" {
-        //         *self.line_no += 1;
-        //         *self.col_no = 1;
-        //     } else {
-        //         *self.col_no += 1;
-        //     }
-        // }
-
         ch
     }
 
@@ -55,6 +46,25 @@ where
             return 0;
         }
         self.buffer.get(*self.index).map(|m| m.index).unwrap_or(
+            self.buffer
+                .get(len - 1)
+                .map(|m| m.index + m.len)
+                .unwrap_or_default(),
+        )
+    }
+
+    pub fn prev_position(&self) -> usize {
+        let len = self.buffer.len();
+        if len == 0 {
+            return 0;
+        }
+
+        let index = *self.index;
+        if index == 0 {
+            return 0;
+        }
+
+        self.buffer.get(index - 1).map(|m| m.index).unwrap_or(
             self.buffer
                 .get(len - 1)
                 .map(|m| m.index + m.len)

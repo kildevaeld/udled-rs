@@ -1,10 +1,20 @@
 use core::marker::PhantomData;
 
+use alloc::fmt;
+
 use crate::{tokenizers::next::Next, Buffer, Tokenizer};
 
 pub struct Exclude<T, B> {
     tokenizer: T,
     buffer: PhantomData<fn(B)>,
+}
+
+impl<T: fmt::Debug, B> fmt::Debug for Exclude<T, B> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("Exclude")
+            .field("tokenizer", &self.tokenizer)
+            .finish()
+    }
 }
 
 impl<T, B> Exclude<T, B> {

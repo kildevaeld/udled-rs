@@ -1,6 +1,6 @@
 use core::marker::PhantomData;
 
-use alloc::vec::Vec;
+use alloc::{boxed::Box, vec::Vec};
 
 use crate::{
     AsDigits, AsSlice, Buffer, Error, Item, Many, Opt, Or, Puntuated, Reader, Sliced, Span,
@@ -11,21 +11,22 @@ pub trait TokenizerExt<'input, B>: Tokenizer<'input, B>
 where
     B: Buffer<'input>,
 {
-    fn map<F, U>(self, func: F) -> Map<Self, F, B>
+    fn map_ok<F, U>(self, func: F) -> MapOk<Self, F, B>
     where
         F: Fn(Self::Token) -> U,
         Self: Sized,
     {
-        Map {
+        MapOk {
             tokenizer: self,
             func,
             ph: PhantomData,
         }
     }
 
-    fn map_err<F>(self, func: F) -> MapErr<Self, F, B>
+    fn map_err<F, U>(self, func: F) -> MapErr<Self, F, B>
     where
-        F: Fn(Error, &B) -> Error,
+        F: Fn(usize, &B) -> U,
+        U: Into<Box<dyn core::error::Error + Send + Sync>>,
         Self: Sized,
     {
         MapErr {
@@ -119,13 +120,13 @@ where
 {
 }
 
-pub struct Map<T, F, B> {
+pub struct MapOk<T, F, B> {
     tokenizer: T,
     func: F,
     ph: PhantomData<fn(&B)>,
 }
 
-impl<'input, T, F, U, B> Tokenizer<'input, B> for Map<T, F, B>
+impl<'input, T, F, U, B> Tokenizer<'input, B> for MapOk<T, F, B>
 where
     B: Buffer<'input>,
     T: Tokenizer<'input, B>,
@@ -158,18 +159,19 @@ pub struct MapErr<T, F, B> {
     ph: PhantomData<fn(&B)>,
 }
 
-impl<'input, T, F, B> Tokenizer<'input, B> for MapErr<T, F, B>
+impl<'input, T, F, U, B> Tokenizer<'input, B> for MapErr<T, F, B>
 where
     B: Buffer<'input>,
     T: Tokenizer<'input, B>,
-    F: Fn(Error, &B) -> Error,
+    F: Fn(usize, &B) -> U,
+    U: Into<Box<dyn core::error::Error + Send + Sync>>,
 {
     type Token = T::Token;
 
     fn eat(&self, reader: &mut crate::Reader<'_, 'input, B>) -> Result<(), crate::Error> {
         self.tokenizer
             .eat(reader)
-            .map_err(|err| (self.func)(err, reader.buffer()))
+            .map_err(|err| Error::new(err.position(), (self.func)(err.position(), reader.buffer())))
     }
 
     fn peek(&self, reader: &mut crate::Reader<'_, 'input, B>) -> bool {
@@ -182,7 +184,7 @@ where
     ) -> Result<Self::Token, crate::Error> {
         self.tokenizer
             .to_token(reader)
-            .map_err(|err| (self.func)(err, reader.buffer()))
+            .map_err(|err| Error::new(err.position(), (self.func)(err.position(), reader.buffer())))
     }
 }
 
@@ -254,7 +256,7 @@ where
 
         let mut output = Vec::with_capacity(self.count as _);
         loop {
-            let next = self.tokenizer.to_token(reader)?;
+            let next = self.tokenizer.parse(reader)?;
             output.push(next);
             if output.len() == self.count as usize {
                 break;

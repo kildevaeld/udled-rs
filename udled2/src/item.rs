@@ -10,6 +10,16 @@ impl<T> Item<T> {
     pub fn new(span: Span, value: T) -> Item<T> {
         Item { span, value }
     }
+
+    pub fn map<F, U>(self, map: F) -> Item<U>
+    where
+        F: FnOnce(T) -> U,
+    {
+        Item {
+            span: self.span,
+            value: map(self.value),
+        }
+    }
 }
 
 impl<T> WithSpan for Item<T> {

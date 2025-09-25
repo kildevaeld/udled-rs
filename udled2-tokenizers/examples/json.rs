@@ -1,7 +1,8 @@
 use std::{collections::BTreeMap, process::Output};
 
 use udled2::{
-    AsChar, AsSlice, AsStr, Buffer, Error, Input, Item, Parser, Reader, Span, Test, TokenizerExt,
+    AsChar, AsSlice, AsStr, Buffer, Error, Input, Item, Location, Parser, Reader, Span, Test,
+    TokenizerExt,
 };
 use udled2_tokenizers::{Bool, Float, Integer, Str};
 
@@ -36,19 +37,16 @@ where
             value
                 .parser()
                 .punctuated(Test((&ws, COMMA, &ws)))
-                .map(|m| m.into_items().collect::<Vec<_>>()),
+                .map_ok(|m| m.into_items().collect::<Vec<_>>()),
             &ws,
             BRACE_CLOSE.map_err(|m, buffer: &B| {
-                //
-                Error::new(
-                    m.position(),
-                    format!(
-                        "Unexpected char {:?}",
-                        buffer
-                            .get(m.position() - 1)
-                            .map(|m| m.item)
-                            .and_then(|m| m.as_char())
-                    ),
+                format!(
+                    "Unexpected char {:?}",
+                    buffer
+                        .get(m)
+                        .map(|m| m.item)
+                        .and_then(|m| m.as_char())
+                        .unwrap_or(' ')
                 )
             }),
         ))
@@ -71,7 +69,7 @@ where
 
     let output = (Str, (&ws, ':', &ws), value.parser())
         .punctuated(Test((&ws, COMMA, &ws)))
-        .map(|m| {
+        .map_ok(|m| {
             m.into_items()
                 .map(|m| (m.0.value, m.2))
                 .collect::<BTreeMap<_, _>>()
@@ -123,13 +121,31 @@ pub enum Value<'a> {
     Map(BTreeMap<&'a str, Value<'a>>),
 }
 
+const JSON: &str = r#"{
+    "name": "Wilbur",
+    "age": 16,
+    "favorites": ["food", "sleeping"]
+}"#;
+
 fn main() -> udled2::Result<()> {
     // let mut input =
     //     Input::new("[-200 ,  440,42,\n 1000, true, \"Hello, World!\", { \"test\": 203.02e21 } ]");
 
-    let mut input = Input::new("[wqwqw]");
+    let mut input = Input::new(JSON);
 
-    let array = input.reader().parse(value.parser())?;
+    let ret = input.reader().parse(value.parser());
+
+    let array = match ret {
+        Ok(ret) => ret,
+        Err(err) => {
+            let location = Location::from(JSON, err.position()).unwrap();
+
+            println!("{err}");
+            println!("location: {:?}", location);
+
+            return Ok(());
+        }
+    };
 
     println!("{:#?}", array);
 

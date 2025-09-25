@@ -22,7 +22,7 @@ where
     B: Buffer<'input>,
 {
     pub fn error<T: Into<Box<dyn core::error::Error + Send + Sync>>>(&self, error: T) -> Error {
-        Error::new(self.cursor.position(), error)
+        Error::new(self.cursor.prev_position(), error)
     }
 
     pub fn error_with<T: Into<Box<dyn core::error::Error + Send + Sync>>>(
@@ -30,7 +30,7 @@ where
         error: T,
         errors: Vec<Error>,
     ) -> Error {
-        Error::new_with(self.cursor.position(), error, errors)
+        Error::new_with(self.cursor.prev_position(), error, errors)
     }
 
     pub fn position(&self) -> usize {

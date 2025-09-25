@@ -15,8 +15,8 @@ where
     fn to_token<'a>(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
         let item = reader
             .parse(or(
-                "true".map(|m| Item::new(m.span, true)),
-                "false".map(|m| Item::new(m.span, false)),
+                "true".map_ok(|m| m.map(|_| true)),
+                "false".map_ok(|m| m.map(|_| false)),
             ))?
             .unify();
 
