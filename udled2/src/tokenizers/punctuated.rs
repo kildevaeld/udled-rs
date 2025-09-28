@@ -89,14 +89,14 @@ where
         if self.non_empty {
             let item = reader.parse(&self.item)?;
             output.push(PuntuatedItem::Item(item));
-            if reader.peek(Prefix(&self.punct, &self.item)) {
+            if reader.is(Prefix(&self.punct, &self.item)) {
                 let punct = reader.parse(&self.punct)?;
                 output.push(PuntuatedItem::Punct(punct));
             }
         }
 
         loop {
-            if !reader.peek(&self.item) {
+            if !reader.is(&self.item) {
                 break;
             }
 
@@ -104,7 +104,7 @@ where
 
             output.push(PuntuatedItem::Item(item));
 
-            if reader.peek(Prefix(&self.punct, &self.item)) {
+            if reader.is(Prefix(&self.punct, &self.item)) {
                 let punct = reader.parse(&self.punct)?;
                 output.push(PuntuatedItem::Punct(punct));
             }

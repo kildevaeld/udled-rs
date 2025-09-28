@@ -26,11 +26,11 @@ impl<B> Input<B> {
         Reader::new(Cursor::new(&mut self.index, &mut self.buffer))
     }
 
-    pub fn peek<'input, T: Tokenizer<'input, B>>(&mut self, tokenizer: T) -> bool
+    pub fn is<'input, T: Tokenizer<'input, B>>(&mut self, tokenizer: T) -> bool
     where
         B: Buffer<'input>,
     {
-        self.reader().peek(tokenizer)
+        self.reader().is(tokenizer)
     }
 
     /// Parse a token

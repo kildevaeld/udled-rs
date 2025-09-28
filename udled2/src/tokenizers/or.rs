@@ -82,6 +82,6 @@ where
     }
 
     fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        reader.peek(&self.left) || reader.peek(&self.right)
+        reader.is(&self.left) || reader.is(&self.right)
     }
 }

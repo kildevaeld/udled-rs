@@ -63,7 +63,7 @@ where
     }
 
     fn peek<'a>(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        reader.peek(&self.0)
+        reader.is(&self.0)
     }
 }
 
@@ -87,7 +87,7 @@ where
     }
 
     fn peek<'a>(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        reader.peek(&self.0)
+        reader.is(&self.0)
     }
 }
 
@@ -111,7 +111,7 @@ where
         let mut depth = 1;
 
         loop {
-            if reader.peek(EOF) {
+            if reader.is(EOF) {
                 return Err(reader.error("unexpected end of input inside multi-line comment"));
             } else if reader.eat(&self.0).is_ok() {
                 depth += 1;
@@ -136,7 +136,7 @@ where
     }
 
     fn peek<'a>(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        reader.peek(&self.0)
+        reader.is(&self.0)
     }
 }
 

@@ -28,7 +28,7 @@ where
     }
 
     fn peek<'a>(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        reader.peek(or("true", "false"))
+        reader.is(or("true", "false"))
     }
 }
 
@@ -46,6 +46,6 @@ mod test {
 
         assert_eq!(a.value, true);
         assert_eq!(b.value, false);
-        assert!(input.peek(EOF))
+        assert!(input.is(EOF))
     }
 }

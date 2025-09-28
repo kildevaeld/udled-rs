@@ -90,20 +90,20 @@ where
     B::Source: AsSlice<'input> + AsStr<'input>,
     <B::Source as AsSlice<'input>>::Slice: AsStr<'input>,
 {
-    if reader.peek(BRACE_OPEN) {
+    if reader.is(BRACE_OPEN) {
         reader.parse(array.parser())
-    } else if reader.peek(BRACKET_OPEN) {
+    } else if reader.is(BRACKET_OPEN) {
         reader.parse(object.parser())
-    } else if reader.peek(Str) {
+    } else if reader.is(Str) {
         let str = reader.parse(Str)?;
         Ok(Value::String(str.value))
-    } else if reader.peek(Bool) {
+    } else if reader.is(Bool) {
         let bool = reader.parse(Bool)?;
         Ok(Value::Bool(bool.value))
-    } else if reader.peek(Float) {
+    } else if reader.is(Float) {
         let float = reader.parse(Float)?;
         Ok(Value::Float(float.value))
-    } else if reader.peek(Integer) {
+    } else if reader.is(Integer) {
         let int = reader.parse(Integer)?;
         Ok(Value::Int(int.value as _))
     } else {
@@ -122,7 +122,7 @@ pub enum Value<'a> {
 }
 
 const JSON: &str = r#"{
-    "name": "Wilbur",
+    "name": "Wilbur\ntest",
     "age": 16,
     "favorites": ["food", "sleeping"]
 }"#;

@@ -49,7 +49,7 @@ where
     type Token = Option<T::Token>;
 
     fn to_token(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
-        if reader.peek(&self.tokenizer) {
+        if reader.is(&self.tokenizer) {
             Ok(Some(reader.parse(&self.tokenizer)?))
         } else {
             Ok(None)
@@ -61,7 +61,7 @@ where
     }
 
     fn eat(&self, reader: &mut Reader<'_, 'input, B>) -> Result<(), Error> {
-        if reader.peek(&self.tokenizer) {
+        if reader.is(&self.tokenizer) {
             reader.parse(&self.tokenizer)?;
         }
         Ok(())

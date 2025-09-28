@@ -195,7 +195,7 @@ where
     type Token = ();
 
     fn to_token<'a>(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
-        if reader.peek(&self.0) {
+        if reader.is(&self.0) {
             let ch = reader.peek_ch().ok_or_else(|| reader.error("EOF"))?;
             return Err(reader.error(format!("unexpected token: {:?}", ch.as_char())));
         }
@@ -203,7 +203,7 @@ where
     }
 
     fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        !reader.peek(&self.0)
+        !reader.is(&self.0)
     }
 }
 
@@ -259,7 +259,7 @@ where
             return false;
         }
 
-        reader.peek(&self.1)
+        reader.is(&self.1)
     }
 }
 

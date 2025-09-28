@@ -43,11 +43,11 @@ impl fmt::Display for Error {
         if self.errors.is_empty() {
             write!(f, "@{}: {}", self.position, self.message)
         } else {
-            write!(f, "@{}: {}, errors: ", self.position, self.message)?;
+            // write!(f, "@{}: {}, errors: ", self.position, self.message)?;
 
             for (k, v) in self.errors.iter().enumerate() {
                 if k > 0 {
-                    write!(f, ", ")?;
+                    writeln!(f, ", ")?;
                 }
 
                 write!(f, "{}", v)?;

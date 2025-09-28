@@ -1,4 +1,7 @@
-use udled2::{AsChar, AsSlice, AsStr, Buffer, Char, Error, Item, Reader, Span, Tokenizer, EOF};
+use udled2::{
+    any, AsChar, AsSlice, AsStr, Buffer, Char, Error, Exclude, Item, Reader, Span, Tokenizer,
+    TokenizerExt, EOF,
+};
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Str;
@@ -12,50 +15,22 @@ where
 {
     type Token = Item<&'input str>;
     fn to_token<'a>(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
-        let start = reader.parse('"')?;
-
-        let end = loop {
-            if reader.peek(EOF) {
-                return Err(reader.error("Unexpected end of input while parsing string literal"));
-            }
-
-            // if !reader.peek(('\0'..'\x1f').or('\x22').or('\x5C')) {
-            //     return;
-            // }
-
-            let ch = reader.parse(Char)?;
-
-            if ch.value == '"' {
-                break ch.span;
-            }
-
-            if ch.value == '\\' {
-                match reader.parse(Char)?.value {
-                    '\\' | '\'' | '"' | 't' | 'r' | 'n' | '0' => {
-                        continue;
-                    }
-                    _ => return Err(reader.error("Unknown escape sequence")),
-                }
-            }
-        };
-
-        let span = start.span + end;
-
-        let str = if span.len() == 2 {
-            Some("")
-        } else {
-            reader
-                .buffer()
-                .source()
-                .sliced(Span::new(span.start + 1, span.end - 1))
-                .map(|m| m.as_str())
-        };
-
-        Ok(Item::new(span, str.unwrap()))
+        reader
+            .parse(
+                (
+                    '"',
+                    ('\\', any!('\\', '\'', '"', 'r', 'n', '0'))
+                        .or(Exclude::new('\\'.or('"')))
+                        .until('"'),
+                    '"'.map_err(|_, _| format!("Expected unicode string")),
+                )
+                    .slice(),
+            )
+            .map(|m| m.map(|m| m.as_str()))
     }
 
     fn peek<'a>(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        reader.peek('"')
+        reader.is('"')
     }
 }
 

@@ -25,7 +25,7 @@ where
 
             val = (base as i128) * val + (ch.value as i128);
 
-            if !reader.peek(Digit(base)) {
+            if !reader.is(Digit(base)) {
                 break;
             }
         }
@@ -34,7 +34,7 @@ where
     }
 
     fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        reader.peek(Test((opt('-'), Digit(10))))
+        reader.is(Test((opt('-'), Digit(10))))
     }
 }
 
@@ -71,7 +71,7 @@ where
     }
 
     fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        reader.peek(Test((Integer, '.')))
+        reader.is(Test((Integer, '.')))
     }
 }
 

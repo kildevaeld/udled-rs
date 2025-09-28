@@ -1,3 +1,4 @@
+mod chars;
 mod digit;
 mod exclude;
 mod many;
@@ -7,8 +8,10 @@ mod or;
 mod punctuated;
 mod slice;
 mod span;
+mod until;
 
 pub use self::{
+    chars::*,
     digit::{AsDigits, Digit},
     exclude::Exclude,
     many::*,
@@ -18,4 +21,5 @@ pub use self::{
     punctuated::*,
     slice::Sliced,
     span::*,
+    until::*,
 };

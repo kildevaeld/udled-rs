@@ -4,7 +4,7 @@ use alloc::{boxed::Box, vec::Vec};
 
 use crate::{
     AsDigits, AsSlice, Buffer, Error, Item, Many, Opt, Or, Puntuated, Reader, Sliced, Span,
-    Spanned, Tokenizer,
+    Spanned, Tokenizer, Until,
 };
 
 pub trait TokenizerExt<'input, B>: Tokenizer<'input, B>
@@ -52,6 +52,14 @@ where
         Self: Sized,
     {
         Many::new(self)
+    }
+
+    fn until<U>(self, until: U) -> Until<Self, U, B>
+    where
+        Self: Sized,
+        U: Tokenizer<'input, B>,
+    {
+        Until::new(self, until)
     }
 
     fn or<T>(self, other: T) -> Or<Self, T, B>

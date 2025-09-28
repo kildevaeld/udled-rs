@@ -48,7 +48,7 @@ where
         &self,
         reader: &mut crate::Reader<'_, 'input, B>,
     ) -> Result<Self::Token, crate::Error> {
-        if reader.peek(&self.tokenizer) {
+        if reader.is(&self.tokenizer) {
             return Err(reader.error("unexpected"));
         }
 

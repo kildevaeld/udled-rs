@@ -17,6 +17,6 @@ where
     }
 
     fn peek(&self, reader: &mut crate::Reader<'_, 'input, B>) -> bool {
-        !reader.peek(EOF)
+        !reader.is(EOF)
     }
 }

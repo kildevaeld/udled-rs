@@ -14,6 +14,7 @@ mod macros;
 mod parser;
 mod reader;
 mod span;
+mod stream;
 mod streaming;
 mod tokenizer;
 mod traits;

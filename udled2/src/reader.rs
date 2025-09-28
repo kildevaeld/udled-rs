@@ -58,7 +58,7 @@ where
         self.cursor.peekn(peek).map(|m| m.item)
     }
 
-    pub fn peek<T: Tokenizer<'input, B>>(&mut self, tokenizer: T) -> bool {
+    pub fn is<T: Tokenizer<'input, B>>(&mut self, tokenizer: T) -> bool {
         self.cursor.child_peek(|cursor| {
             let mut reader = Reader { cursor };
             tokenizer.peek(&mut reader)
