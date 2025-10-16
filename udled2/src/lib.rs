@@ -24,7 +24,7 @@ mod tokenizers;
 pub use self::parser::Parser;
 
 pub use self::{
-    buffer::{Buffer, BufferItem},
+    buffer::{Buffer, BufferItem, StringBuffer},
     cursor::Cursor,
     either::Either,
     error::*,
