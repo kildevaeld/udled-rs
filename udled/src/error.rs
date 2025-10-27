@@ -1,31 +1,53 @@
-use alloc::{borrow::Cow, vec::Vec};
 use core::fmt;
 
-pub type Result<T> = core::result::Result<T, Error>;
+use alloc::{boxed::Box, vec::Vec};
 
 #[derive(Debug)]
 pub struct Error {
-    message: Cow<'static, str>,
-    line_no: usize,
-    col_no: usize,
-    errors: Vec<Error>,
     position: usize,
+    message: Box<dyn core::error::Error + Send + Sync>,
+    errors: Vec<Error>,
+}
+
+impl Error {
+    pub fn new<T: Into<Box<dyn core::error::Error + Send + Sync>>>(
+        position: usize,
+        msg: T,
+    ) -> Error {
+        Error {
+            position,
+            message: msg.into(),
+            errors: Vec::new(),
+        }
+    }
+
+    pub fn new_with<T: Into<Box<dyn core::error::Error + Send + Sync>>>(
+        position: usize,
+        msg: T,
+        errors: Vec<Error>,
+    ) -> Error {
+        Error {
+            position,
+            message: msg.into(),
+            errors,
+        }
+    }
+
+    pub fn position(&self) -> usize {
+        self.position
+    }
 }
 
 impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         if self.errors.is_empty() {
-            write!(f, "@{}:{}: {}", self.line_no, self.col_no, self.message)
+            write!(f, "@{}: {}", self.position, self.message)
         } else {
-            write!(
-                f,
-                "@{}:{}: {}, errors: ",
-                self.line_no, self.col_no, self.message
-            )?;
+            // write!(f, "@{}: {}, errors: ", self.position, self.message)?;
 
             for (k, v) in self.errors.iter().enumerate() {
                 if k > 0 {
-                    write!(f, ", ")?;
+                    writeln!(f, ", ")?;
                 }
 
                 write!(f, "{}", v)?;
@@ -36,53 +58,10 @@ impl fmt::Display for Error {
     }
 }
 
-impl core::error::Error for Error {}
-
-impl Error {
-    pub fn new(
-        message: impl Into<Cow<'static, str>>,
-        position: usize,
-        line_no: usize,
-        col_no: usize,
-    ) -> Error {
-        Error {
-            message: message.into(),
-            line_no,
-            col_no,
-            errors: Default::default(),
-            position,
-        }
-    }
-
-    pub fn new_with(
-        message: impl Into<Cow<'static, str>>,
-        position: usize,
-        line_no: usize,
-        col_no: usize,
-        errors: Vec<Error>,
-    ) -> Error {
-        Error {
-            message: message.into(),
-            line_no,
-            col_no,
-            errors,
-            position,
-        }
-    }
-
-    pub fn message(&self) -> &str {
-        &self.message
-    }
-
-    pub fn col_no(&self) -> usize {
-        self.col_no
-    }
-
-    pub fn line_no(&self) -> usize {
-        self.line_no
-    }
-
-    pub fn position(&self) -> usize {
-        self.position
+impl core::error::Error for Error {
+    fn cause(&self) -> Option<&dyn core::error::Error> {
+        Some(&*self.message)
     }
 }
+
+pub type Result<T> = core::result::Result<T, Error>;

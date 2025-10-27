@@ -1,178 +1,113 @@
-use alloc::string::ToString;
 use udled::{
-    any,
-    token::{Digit, Opt, Spanned},
-    Error, Item, Reader, Span, StringExt, Tokenizer,
+    opt, AsChar, AsSlice, AsStr, Buffer, Digit, Error, Item, Reader, Span, Test, Tokenizer,
+    TokenizerExt,
 };
-/// Match a rust style integer
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Int;
 
-impl Tokenizer for Int {
-    type Token<'a> = Item<i128>;
-    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
-        let mut val: i128 = 0;
-
-        let start = reader.position();
-
-        let sign = if reader.parse("-").is_ok() { -1 } else { 1 };
-
-        let mut base = 10;
-        if reader.parse("0x").is_ok() {
-            base = 16
-        };
-        if reader.parse("0b").is_ok() {
-            base = 2
-        };
-
-        loop {
-            let ch = reader.parse(Digit(base))?;
-
-            val = (base as i128) * val + (ch as i128);
-
-            let Some(ch) = reader.peek_ch() else {
-                break;
-            };
-
-            // Allow underscores as separators
-            if ch == "_" {
-                reader.eat_ch()?;
-                continue;
-            }
-
-            if ch == "\0" {
-                break;
-            }
-
-            if !ch.is_digit(base) {
-                break;
-            }
-        }
-
-        return Ok(Item::new(sign * val, Span::new(start, reader.position())));
-    }
-
-    fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
-        let Some(mut ch) = reader.peek_ch() else {
-            return Ok(false);
-        };
-
-        if ch == "-" {
-            let Some(next) = reader.peek_chn(1) else {
-                return Ok(false);
-            };
-
-            ch = next;
-        }
-
-        Ok(ch.is_digit(10))
-    }
-}
-
-/// Match a integer
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct Integer;
 
-impl Tokenizer for Integer {
-    type Token<'a> = Item<i128>;
+impl<'input, B> Tokenizer<'input, B> for Integer
+where
+    B: Buffer<'input>,
+    B::Item: AsChar,
+{
+    type Token = Item<i128>;
 
-    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
+    fn to_token<'a>(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
         let start = reader.position();
         let mut val: i128 = 0;
         let base = 10;
 
+        let sign = if reader.eat('-').is_ok() { -1 } else { 1 };
+
         loop {
             let ch = reader.parse(Digit(base))?;
 
-            val = (base as i128) * val + (ch as i128);
+            val = (base as i128) * val + (ch.value as i128);
 
-            let Some(ch) = reader.peek_ch() else {
-                break;
-            };
-
-            // Allow underscores as separators
-            if ch == "_" {
-                reader.eat_ch()?;
-                continue;
-            }
-
-            if ch == "\0" {
-                break;
-            }
-
-            if !ch.is_digit(base) {
+            if !reader.is(Digit(base)) {
                 break;
             }
         }
 
-        return Ok(Item::new(val, Span::new(start, reader.position())));
+        return Ok(Item::new(Span::new(start, reader.position()), val * sign));
     }
 
-    fn peek(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
-        reader.peek(Digit(10))
+    fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
+        reader.is(Test((opt('-'), Digit(10))))
     }
 }
 
-/// Match a rust style float
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Float;
 
-impl Tokenizer for Float {
-    type Token<'a> = Item<f64>;
+impl<'input, B> Tokenizer<'input, B> for Float
+where
+    B: Buffer<'input>,
+    B::Item: AsChar,
+    B::Source: AsSlice<'input>,
+    <B::Source as AsSlice<'input>>::Slice: AsStr<'input>,
+{
+    type Token = Item<f64>;
 
-    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
-        let start = reader.parse(Spanned(Integer))?;
-        reader.eat('.')?;
-        let mut end = reader.parse(Spanned(Integer))?;
+    fn to_token<'a>(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
+        let slice = reader.parse(
+            (
+                Integer,
+                '.',
+                Integer,
+                ('e'.or('E'), opt('-'), Integer).optional(),
+            )
+                .slice(),
+        )?;
 
-        if reader.peek(any!('E', 'e'))? {
-            end = reader.parse(Spanned((any!('E', 'e'), Opt('-'), Integer)))?;
-        }
-
-        let input = (start + end)
-            .slice(reader.source())
-            .ok_or_else(|| reader.error("Invalid range"))?;
-
-        let float: f64 = input
+        let float: f64 = slice
+            .value
+            .as_str()
             .parse()
             .map_err(|err: core::num::ParseFloatError| reader.error(err.to_string()))?;
 
-        Ok(Item::new(float, start + end))
+        Ok(Item::new(slice.span, float))
+    }
+
+    fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
+        reader.is(Test((Integer, '.')))
     }
 }
 
 #[cfg(test)]
 mod test {
-    use udled::{token::Ws, Input};
+    use udled::Input;
 
-    use super::{Float, Int, Integer};
+    use super::{Float, Integer};
 
     #[test]
     fn integer() {
         let mut input = Input::new("10203 0 42");
 
-        let (a, _, b, _, c) = input.parse((Integer, Ws, Integer, Ws, Integer)).unwrap();
+        let (a, _, b, _, c) = input.parse((Integer, ' ', Integer, ' ', Integer)).unwrap();
 
         assert_eq!(a.value, 10203);
         assert_eq!(b.value, 0);
         assert_eq!(c.value, 42);
     }
 
-    #[test]
-    fn int() {
-        let mut input = Input::new("0x202 0b11 42");
+    // #[test]
+    // fn int() {
+    //     let mut input = Input::new("0x202 0b11 42");
 
-        let (a, _, b, _, c) = input.parse((Int, Ws, Int, Ws, Int)).unwrap();
+    //     let (a, _, b, _, c) = input.parse((Int, Ws, Int, Ws, Int)).unwrap();
 
-        assert_eq!(a.value, 0x202);
-        assert_eq!(b.value, 0b11);
-        assert_eq!(c.value, 42);
-    }
+    //     assert_eq!(a.value, 0x202);
+    //     assert_eq!(b.value, 0b11);
+    //     assert_eq!(c.value, 42);
+    // }
 
     #[test]
     fn float() {
         let mut input = Input::new("1.0 2003.303 12.03e-20");
 
-        let (a, _, b, _, c) = input.parse((Float, Ws, Float, Ws, Float)).unwrap();
+        let (a, _, b, _, c) = input.parse((Float, ' ', Float, ' ', Float)).unwrap();
 
         assert_eq!(a.value, 1.0);
         assert_eq!(b.value, 2003.303);

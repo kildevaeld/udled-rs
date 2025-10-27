@@ -1,47 +1,35 @@
-use udled::{token::Char, Error, Lex, Reader, Span, Tokenizer};
+use udled::{
+    any, AsChar, AsSlice, AsStr, Buffer, Error, Exclude, Item, Reader, Tokenizer, TokenizerExt,
+};
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Str;
 
-impl Tokenizer for Str {
-    type Token<'a> = Lex<'a>;
-    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
-        let start = reader.parse('"')?;
-
-        let end = loop {
-            if reader.eof() {
-                return Err(reader.error("Unexpected end of input while parsing string literal"));
-            }
-
-            let ch = reader.parse(Char)?;
-
-            if ch == r#"""# {
-                break ch.span;
-            }
-
-            if ch == "\\" {
-                match reader.eat_ch()? {
-                    "\\" | "\'" | "\"" | "t" | "r" | "n" | "0" => {
-                        continue;
-                    }
-                    _ => return Err(reader.error("Unknown escape sequence")),
-                }
-            }
-        };
-
-        let span = start + end;
-
-        let str = if span.len() == 2 {
-            Some("")
-        } else {
-            Span::new(span.start + 1, span.end - 1).slice(reader.source())
-        };
-
-        Ok(Lex::new(str.unwrap(), span))
+impl<'input, B> Tokenizer<'input, B> for Str
+where
+    B: Buffer<'input>,
+    B::Item: AsChar,
+    B::Source: AsSlice<'input>,
+    <B::Source as AsSlice<'input>>::Slice: AsStr<'input>,
+{
+    type Token = Item<&'input str>;
+    fn to_token<'a>(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
+        reader
+            .parse(
+                (
+                    '"',
+                    ('\\', any!('\\', '\'', '"', 'r', 'n', '0'))
+                        .or(Exclude::new('\\'.or('"')))
+                        .until('"'),
+                    '"'.map_err(|_, _| format!("Expected unicode string")),
+                )
+                    .slice(),
+            )
+            .map(|m| m.map(|m| m.as_str()))
     }
 
-    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
-        reader.peek('"')
+    fn peek<'a>(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
+        reader.is('"')
     }
 }
 

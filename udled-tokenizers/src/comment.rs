@@ -1,4 +1,4 @@
-use udled2::{
+use udled::{
     AsChar, AsSlice, Buffer, Either, Error, Exclude, Item, Reader, Span, Tokenizer, TokenizerExt,
     EOF,
 };
@@ -142,7 +142,7 @@ where
 
 #[cfg(test)]
 mod test {
-    use udled2::Input;
+    use udled::Input;
 
     use super::*;
 

@@ -1,28 +1,16 @@
 [package]
 name = "udled"
-version = "0.4.0"
-
+version = "0.6.0"
 edition.workspace = true
-license.workspace = true
 keywords.workspace = true
 categories.workspace = true
 authors.workspace = true
 repository.workspace = true
+license.workspace = true
 rust-version.workspace = true
 
-readme = "README.md"
-description = "Tokenizer and parser"
-
 [features]
-default = []
-std = ["serde?/std"]
 serde = ["dep:serde"]
-macros = ["udled-macros"]
-
 
 [dependencies]
-unicode-segmentation = "1"
-serde = { version = "1", default-features = false, features = [
-    "derive",
-], optional = true }
-udled-macros = { path = "../udled-macros", version = "0.1.0", optional = true }
+serde = { version = "1", features = ["derive"], optional = true }

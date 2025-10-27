@@ -4,69 +4,63 @@ use alloc::{fmt, vec, vec::Vec};
 
 use crate::{Buffer, Error, Item, Reader, Span, Tokenizer, EOF};
 
-pub const fn until<T, U, B>(tokenizer: T, until: U) -> Until<T, U, B> {
-    Until::new(tokenizer, until)
+pub const fn many<T, B>(tokenizer: T) -> Many<T, B> {
+    Many::new(tokenizer)
 }
 
-pub struct Until<T, U, B> {
+pub struct Many<T, B> {
     tokenizer: T,
-    until: U,
     buffer: PhantomData<fn(B)>,
 }
 
-impl<T, U, B> Until<T, U, B> {
-    pub const fn new(tokenizer: T, until: U) -> Until<T, U, B> {
-        Until {
+impl<T, B> Many<T, B> {
+    pub const fn new(tokenizer: T) -> Many<T, B> {
+        Many {
             tokenizer,
-            until,
             buffer: PhantomData,
         }
     }
 }
 
-impl<T: Clone, U: Clone, B> Clone for Until<T, U, B> {
+impl<T: Clone, B> Clone for Many<T, B> {
     fn clone(&self) -> Self {
-        Until {
+        Many {
             tokenizer: self.tokenizer.clone(),
-            until: self.until.clone(),
             buffer: PhantomData,
         }
     }
 }
 
-impl<T: Copy, U: Copy, B> Copy for Until<T, U, B> {}
+impl<T: Copy, B> Copy for Many<T, B> {}
 
-impl<T: fmt::Debug, U: fmt::Debug, B> fmt::Debug for Until<T, U, B> {
+impl<T: fmt::Debug, B> fmt::Debug for Many<T, B> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_struct("Until")
+        f.debug_struct("Many")
             .field("tokenizer", &self.tokenizer)
-            .field("until", &self.until)
             .finish()
     }
 }
 
-impl<'input, T, U, B> Tokenizer<'input, B> for Until<T, U, B>
+impl<'input, T, B> Tokenizer<'input, B> for Many<T, B>
 where
     B: Buffer<'input>,
     T: Tokenizer<'input, B>,
-    U: Tokenizer<'input, B>,
 {
     type Token = Item<Vec<T::Token>>;
 
     fn to_token(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
         let start = reader.position();
-        let mut output = Vec::new();
+        let first = reader.parse(&self.tokenizer)?;
+        let mut output = vec![first];
 
         loop {
             if reader.is(EOF) {
-                return Err(reader.error("unexepted eof"));
-            }
-
-            if reader.is(&self.until) {
                 break;
             }
 
-            let next = reader.parse(&self.tokenizer)?;
+            let Ok(next) = reader.parse(&self.tokenizer) else {
+                break;
+            };
             output.push(next);
         }
 
@@ -79,10 +73,6 @@ where
         reader.eat(&self.tokenizer)?;
 
         loop {
-            if reader.is(&self.until) {
-                break;
-            }
-
             if reader.eat(&self.tokenizer).is_err() {
                 break;
             }
