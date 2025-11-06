@@ -1,10 +1,10 @@
-use std::{collections::BTreeMap, process::Output};
+use std::collections::BTreeMap;
 
-use udled2::{
-    AsChar, AsSlice, AsStr, Buffer, Error, Input, Item, Location, Parser, Reader, Span, Test,
+use udled::{
+    AsChar, AsSlice, AsStr, Buffer, Error, Input, Location, Parser, Reader, Span, Test,
     TokenizerExt,
 };
-use udled2_tokenizers::{Bool, Float, Integer, Str};
+use udled_tokenizers::{Bool, Float, Integer, Str};
 
 const BRACKET_OPEN: char = '{';
 const BRACKET_CLOSE: char = '}';
@@ -83,7 +83,7 @@ where
     Ok(Value::Map(output))
 }
 
-fn value<'input, B>(reader: &mut Reader<'_, 'input, B>) -> udled2::Result<Value<'input>>
+fn value<'input, B>(reader: &mut Reader<'_, 'input, B>) -> udled::Result<Value<'input>>
 where
     B: Buffer<'input>,
     B::Item: AsChar,
@@ -127,7 +127,7 @@ const JSON: &str = r#"{
     "favorites": ["food", "sleeping"]
 }"#;
 
-fn main() -> udled2::Result<()> {
+fn main() -> udled::Result<()> {
     // let mut input =
     //     Input::new("[-200 ,  440,42,\n 1000, true, \"Hello, World!\", { \"test\": 203.02e21 } ]");
 

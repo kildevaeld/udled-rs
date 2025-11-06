@@ -15,7 +15,7 @@ pub trait Tokenizer<'input, B: Buffer<'input>> {
     }
 
     fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        self.to_token(reader).is_ok()
+        self.eat(reader).is_ok()
     }
 }
 
@@ -69,7 +69,7 @@ where
         let start = reader.position();
 
         for token in tokens {
-            let Some(next) = reader.eat_ch()?.as_char() else {
+            let Some(next) = reader.read()?.as_char() else {
                 return Err(reader.error(self.to_string()));
             };
             if token != next {
@@ -120,7 +120,7 @@ where
 
     fn to_token(&self, reader: &mut Reader<'_, 'input, S>) -> Result<Self::Token, Error> {
         let start = reader.position();
-        match reader.eat_ch()?.as_char() {
+        match reader.read()?.as_char() {
             Some(ret) => Ok(Item {
                 span: Span::new(start, start + ret.len_utf8()),
                 value: ret,
@@ -277,8 +277,12 @@ where
         self.0.to_token(reader)
     }
 
+    fn eat(&self, reader: &mut Reader<'_, 'input, B>) -> Result<(), Error> {
+        self.0.eat(reader)
+    }
+
     fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        self.to_token(reader).is_ok()
+        self.eat(reader).is_ok()
     }
 }
 

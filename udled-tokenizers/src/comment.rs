@@ -53,7 +53,7 @@ where
         let item = reader.parse(
             (
                 &self.0,
-                Exclude::new('\n').many().optional().spanned(),
+                Exclude::new('\n'.or(EOF)).many().optional().spanned(),
                 '\n'.optional(),
             )
                 .slice(),
@@ -122,7 +122,7 @@ where
                     break;
                 }
             } else {
-                reader.eat_ch()?;
+                reader.read()?;
             }
         }
 

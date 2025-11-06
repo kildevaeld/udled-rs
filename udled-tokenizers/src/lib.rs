@@ -3,6 +3,7 @@ mod comment;
 mod ident;
 mod numeric;
 mod string;
+mod ws;
 
 pub use self::{
     bool::Bool,
@@ -10,4 +11,5 @@ pub use self::{
     ident::*,
     numeric::{Float, Integer},
     string::Str,
+    ws::*,
 };

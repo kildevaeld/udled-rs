@@ -1,5 +1,5 @@
-use udled2::{or, AsChar, Buffer, Digit, Input, Reader, Test, Tokenizer, TokenizerExt};
-use udled2_tokenizers::Integer;
+use udled::{or, AsChar, Buffer, Digit, Input, Reader, Test, Tokenizer, TokenizerExt};
+use udled_tokenizers::Integer;
 
 const TWO_DIGITS: (Digit, Digit) = (Digit(10), Digit(10));
 const FOUR_DIGITS: (Digit, Digit, Digit, Digit) = (Digit(10), Digit(10), Digit(10), Digit(10));
@@ -13,7 +13,7 @@ where
 {
     type Token = (u16, u8, u8);
 
-    fn to_token(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, udled2::Error> {
+    fn to_token(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, udled::Error> {
         let (year, _, month, _, day) = reader.parse((
             FOUR_DIGITS.into_integer(10),
             '-',
@@ -25,7 +25,7 @@ where
         Ok((year.value as _, month.value as _, day.value as _))
     }
 
-    fn eat(&self, reader: &mut Reader<'_, 'input, B>) -> Result<(), udled2::Error> {
+    fn eat(&self, reader: &mut Reader<'_, 'input, B>) -> Result<(), udled::Error> {
         reader.eat((FOUR_DIGITS, '-', TWO_DIGITS, '-', TWO_DIGITS))
     }
 
@@ -43,7 +43,7 @@ where
 {
     type Token = (u8, u8, u8, u32);
 
-    fn to_token(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, udled2::Error> {
+    fn to_token(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, udled::Error> {
         let parser = TWO_DIGITS.into_integer(10);
 
         let (hour, _, min, _, secs) = reader.parse((&parser, ':', &parser, ':', &parser))?;
@@ -59,7 +59,7 @@ where
         Ok((hour.value as _, min.value as _, secs.value as _, nano))
     }
 
-    fn eat(&self, reader: &mut Reader<'_, 'input, B>) -> Result<(), udled2::Error> {
+    fn eat(&self, reader: &mut Reader<'_, 'input, B>) -> Result<(), udled::Error> {
         reader.eat((TWO_DIGITS, ':', TWO_DIGITS, ':', TWO_DIGITS))?;
 
         if reader.is(',') {
@@ -84,7 +84,7 @@ where
 {
     type Token = (i32, u32, u32);
 
-    fn to_token(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, udled2::Error> {
+    fn to_token(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, udled::Error> {
         or(
             // Utc
             'z'.or('Z').map_ok(|_| (0i32, 0u32, 0u32)),
@@ -107,7 +107,7 @@ where
         .parse(reader)
     }
 
-    fn eat(&self, reader: &mut Reader<'_, 'input, B>) -> Result<(), udled2::Error> {
+    fn eat(&self, reader: &mut Reader<'_, 'input, B>) -> Result<(), udled::Error> {
         reader.eat(or(
             // UTC
             'z'.or('Z'),
@@ -135,7 +135,7 @@ where
 {
     type Token = (u16, u8, u8, u8, u8, u8, u32, (i32, u32, u32));
 
-    fn to_token(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, udled2::Error> {
+    fn to_token(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, udled::Error> {
         let (year, month, day) = reader.parse(DateParser)?;
 
         reader.eat('T'.or(' '))?;
@@ -147,7 +147,7 @@ where
         Ok((year, month, day, h, m, s, n, timezone))
     }
 
-    fn eat(&self, reader: &mut Reader<'_, 'input, B>) -> Result<(), udled2::Error> {
+    fn eat(&self, reader: &mut Reader<'_, 'input, B>) -> Result<(), udled::Error> {
         reader.eat((DateParser, 'T'.or(' '), TimeParser, TimeZoneParser))?;
 
         Ok(())
@@ -158,7 +158,7 @@ where
     }
 }
 
-fn main() -> udled2::Result<()> {
+fn main() -> udled::Result<()> {
     let input = "2025-09-24T20:27:35-01:30";
 
     let mut parser = Input::new(input.as_bytes());

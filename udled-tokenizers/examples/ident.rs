@@ -1,5 +1,5 @@
-use udled2::Input;
-use udled2_tokenizers::{Ident, XmlIdent};
+use udled::Input;
+use udled_tokenizers::XmlIdent;
 
 fn main() {
     let mut input = Input::new("html-div");

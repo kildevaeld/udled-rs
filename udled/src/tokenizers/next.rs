@@ -13,7 +13,7 @@ where
         &self,
         reader: &mut crate::Reader<'_, 'input, B>,
     ) -> Result<Self::Token, crate::Error> {
-        reader.eat_ch()
+        reader.read()
     }
 
     fn peek(&self, reader: &mut crate::Reader<'_, 'input, B>) -> bool {

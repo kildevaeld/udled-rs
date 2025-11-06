@@ -36,7 +36,7 @@ where
 #[cfg(test)]
 mod test {
 
-    use udled::Input;
+    use udled::{Input, Span};
 
     use super::*;
 
@@ -44,7 +44,7 @@ mod test {
     fn empty_string() {
         let mut input = Input::new(r#""""#);
         let str = input.parse(Str).unwrap();
-        assert_eq!(str.value, "");
+        assert_eq!(str.value, r#""""#);
         assert_eq!(str.span, Span::new(0, 2));
     }
 
@@ -52,7 +52,7 @@ mod test {
     fn string() {
         let mut input = Input::new(r#""Hello, World!""#);
         let str = input.parse(Str).unwrap();
-        assert_eq!(str.value, "Hello, World!");
+        assert_eq!(str.value, r#""Hello, World!""#);
         assert_eq!(str.span, Span::new(0, 15));
     }
 }
