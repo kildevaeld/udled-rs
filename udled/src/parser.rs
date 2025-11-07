@@ -26,7 +26,7 @@ where
 pub struct Func<T, U>(T, PhantomData<U>);
 
 impl<T, U> Func<T, U> {
-    pub fn new(func: T) -> Func<T, U> {
+    pub const fn new(func: T) -> Func<T, U> {
         Func(func, PhantomData)
     }
 }
