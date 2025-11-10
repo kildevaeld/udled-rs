@@ -51,7 +51,7 @@ where
         reader: &mut udled::Reader<'_, 'input, T>,
     ) -> Result<Self::Token, udled::Error> {
         let char = reader.parse(Char)?;
-        if char.value.is_whitespace() {
+        if char.value.is_ascii_whitespace() {
             Ok(char)
         } else {
             Err(reader.error("Whitespace"))
@@ -68,7 +68,7 @@ where
             return false;
         };
 
-        ret.value.is_whitespace()
+        ret.value.is_ascii_whitespace()
     }
 }
 

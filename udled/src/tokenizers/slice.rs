@@ -8,7 +8,7 @@ pub struct Sliced<T, B> {
 }
 
 impl<T, B> Sliced<T, B> {
-    pub fn new(tokenizer: T) -> Sliced<T, B> {
+    pub const fn new(tokenizer: T) -> Sliced<T, B> {
         Self {
             tokenizer,
             buffer: PhantomData,

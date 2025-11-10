@@ -34,5 +34,7 @@ impls!(
   AlphaNumeric => is_alphanumeric,
   Punct => is_ascii_punctuation,
   Numeric => is_numeric,
-  AsciiWhiteSpace => is_ascii_whitespace
+  AsciiWhiteSpace => is_ascii_whitespace,
+  WhiteSpace => is_whitespace,
+  LineFeed => is_linefeed
 );

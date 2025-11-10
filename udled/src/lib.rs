@@ -14,8 +14,6 @@ mod macros;
 mod parser;
 mod reader;
 mod span;
-mod stream;
-mod streaming;
 mod tokenizer;
 mod traits;
 
@@ -34,7 +32,7 @@ pub use self::{
     location::Location,
     reader::Reader,
     span::*,
-    tokenizer::{Char, Not, Peek, Prefix, Test, Tokenizer, EOF},
+    tokenizer::{Char, IgnoreCase, Not, Peek, Prefix, Tokenizer, EOF},
     tokenizers::*,
     traits::*,
 };

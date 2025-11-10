@@ -71,7 +71,7 @@ where
         .punctuated(Test((&ws, COMMA, &ws)))
         .map_ok(|m| {
             m.into_items()
-                .map(|m| (m.0.value, m.2))
+                .map(|m| (m.0.value.as_str(), m.2))
                 .collect::<BTreeMap<_, _>>()
         })
         .parse(reader)?;
@@ -96,7 +96,7 @@ where
         reader.parse(object.parser())
     } else if reader.is(Str) {
         let str = reader.parse(Str)?;
-        Ok(Value::String(str.value))
+        Ok(Value::String(str.value.as_str().into()))
     } else if reader.is(Bool) {
         let bool = reader.parse(Bool)?;
         Ok(Value::Bool(bool.value))

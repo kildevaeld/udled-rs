@@ -1,3 +1,7 @@
+#![no_std]
+
+extern crate alloc;
+
 mod bool;
 mod comment;
 mod ident;

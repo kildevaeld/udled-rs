@@ -1,3 +1,4 @@
+use alloc::string::ToString;
 use udled::{
     opt, AsChar, AsSlice, AsStr, Buffer, Digit, Error, Item, Reader, Span, Test, Tokenizer,
     TokenizerExt,
@@ -55,8 +56,8 @@ where
             (
                 Integer,
                 '.',
-                Integer,
-                ('e'.or('E'), opt('-'), Integer).optional(),
+                Digit(10).many(),
+                ('e'.or('E'), opt('-'), Digit(10).many()).optional(),
             )
                 .slice(),
         )?;
@@ -105,7 +106,7 @@ mod test {
 
     #[test]
     fn float() {
-        let mut input = Input::new("1.0 2003.303 12.03e-20");
+        let mut input = Input::new("1.0000033 2003.303 12.03e-20");
 
         let (a, _, b, _, c) = input.parse((Float, ' ', Float, ' ', Float)).unwrap();
 

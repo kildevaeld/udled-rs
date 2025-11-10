@@ -11,7 +11,7 @@ pub struct Or<L, R, B> {
     buffer: PhantomData<fn(B)>,
 }
 
-pub fn or<L, R, B>(left: L, right: R) -> Or<L, R, B> {
+pub const fn or<L, R, B>(left: L, right: R) -> Or<L, R, B> {
     Or::new(left, right)
 }
 

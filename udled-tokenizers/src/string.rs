@@ -1,3 +1,4 @@
+use alloc::format;
 use udled::{
     any, AsChar, AsSlice, AsStr, Buffer, Error, Exclude, Item, Reader, Tokenizer, TokenizerExt,
 };
@@ -10,22 +11,19 @@ where
     B: Buffer<'input>,
     B::Item: AsChar,
     B::Source: AsSlice<'input>,
-    <B::Source as AsSlice<'input>>::Slice: AsStr<'input>,
 {
-    type Token = Item<&'input str>;
+    type Token = Item<<B::Source as AsSlice<'input>>::Slice>;
     fn to_token<'a>(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
-        reader
-            .parse(
-                (
-                    '"',
-                    ('\\', any!('\\', '\'', '"', 'r', 'n', '0'))
-                        .or(Exclude::new('\\'.or('"')))
-                        .until('"'),
-                    '"'.map_err(|_, _| format!("Expected unicode string")),
-                )
-                    .slice(),
+        reader.parse(
+            (
+                '"',
+                ('\\', any!('\\', '\'', '"', 'r', 'n', '0'))
+                    .or(Exclude::new('\\'.or('"')))
+                    .until('"'),
+                '"'.map_err(|_, _| format!("Expected unicode string")),
             )
-            .map(|m| m.map(|m| m.as_str()))
+                .slice(),
+        )
     }
 
     fn peek<'a>(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
