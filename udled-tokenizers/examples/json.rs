@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use udled::{
-    AsChar, AsSlice, AsStr, Buffer, Error, Input, Location, Parser, Reader, Span, Test,
+    AsChar, AsSlice, AsStr, Buffer, Error, Input, Location, Parser, Peek, Reader, Span,
     TokenizerExt,
 };
 use udled_tokenizers::{Bool, Float, Integer, Str};
@@ -36,7 +36,7 @@ where
             &ws,
             value
                 .parser()
-                .punctuated(Test((&ws, COMMA, &ws)))
+                .punctuated(Peek((&ws, COMMA, &ws)))
                 .map_ok(|m| m.into_items().collect::<Vec<_>>()),
             &ws,
             BRACE_CLOSE.map_err(|m, buffer: &B| {
@@ -68,7 +68,7 @@ where
     reader.eat(&ws)?;
 
     let output = (Str, (&ws, ':', &ws), value.parser())
-        .punctuated(Test((&ws, COMMA, &ws)))
+        .punctuated(Peek((&ws, COMMA, &ws)))
         .map_ok(|m| {
             m.into_items()
                 .map(|m| (m.0.value.as_str(), m.2))
@@ -122,14 +122,14 @@ pub enum Value<'a> {
 }
 
 const JSON: &str = r#"{
-    "name": "Wilbur\ntest",
+    "name": "Wilbur\nPeek",
     "age": 16,
     "favorites": ["food", "sleeping"]
 }"#;
 
 fn main() -> udled::Result<()> {
     // let mut input =
-    //     Input::new("[-200 ,  440,42,\n 1000, true, \"Hello, World!\", { \"test\": 203.02e21 } ]");
+    //     Input::new("[-200 ,  440,42,\n 1000, true, \"Hello, World!\", { \"Peek\": 203.02e21 } ]");
 
     let mut input = Input::new(JSON);
 

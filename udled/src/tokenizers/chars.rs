@@ -1,4 +1,4 @@
-use crate::{AsChar, Buffer, Char, Item, Tokenizer};
+use crate::{AsChar, Buffer, Char, Item, StringExt, Tokenizer};
 
 macro_rules! impls {
     ($($name: ident => $method: ident),+) => {
@@ -36,5 +36,5 @@ impls!(
   Numeric => is_numeric,
   AsciiWhiteSpace => is_ascii_whitespace,
   WhiteSpace => is_whitespace,
-  LineFeed => is_linefeed
+  LineBreak => is_linebreak
 );

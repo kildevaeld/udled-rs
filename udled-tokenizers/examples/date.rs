@@ -1,4 +1,4 @@
-use udled::{or, AsChar, Buffer, Digit, Input, Reader, Test, Tokenizer, TokenizerExt};
+use udled::{or, AsChar, Buffer, Digit, Input, Peek, Reader, Tokenizer, TokenizerExt};
 use udled_tokenizers::Integer;
 
 const TWO_DIGITS: (Digit, Digit) = (Digit(10), Digit(10));
@@ -30,7 +30,7 @@ where
     }
 
     fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        reader.is(Test(FOUR_DIGITS))
+        reader.is(Peek(FOUR_DIGITS))
     }
 }
 
@@ -71,7 +71,7 @@ where
     }
 
     fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        reader.is(Test((TWO_DIGITS, ':')))
+        reader.is(Peek((TWO_DIGITS, ':')))
     }
 }
 
@@ -122,7 +122,7 @@ where
     }
 
     fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        reader.is(Test(('+'.or('-'), TWO_DIGITS)))
+        reader.is(Peek(('+'.or('-'), TWO_DIGITS)))
     }
 }
 
@@ -154,7 +154,7 @@ where
     }
 
     fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        reader.is(Test((FOUR_DIGITS, '-')))
+        reader.is(Peek((FOUR_DIGITS, '-')))
     }
 }
 

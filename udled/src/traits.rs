@@ -104,7 +104,7 @@ impl StringExt for char {
     }
 
     fn is_linebreak(&self) -> bool {
-        *self == '\n'
+        *self == '\n' || *self == '\r' || *self == '\u{2028}' || *self == '\u{2029}'
     }
 }
 

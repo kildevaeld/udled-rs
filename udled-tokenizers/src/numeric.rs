@@ -1,6 +1,6 @@
 use alloc::string::ToString;
 use udled::{
-    opt, AsChar, AsSlice, AsStr, Buffer, Digit, Error, Item, Reader, Span, Test, Tokenizer,
+    opt, AsChar, AsSlice, AsStr, Buffer, Digit, Error, Item, Peek, Reader, Span, Tokenizer,
     TokenizerExt,
 };
 
@@ -35,7 +35,7 @@ where
     }
 
     fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        reader.is(Test((opt('-'), Digit(10))))
+        reader.is(Peek((opt('-'), Digit(10))))
     }
 }
 
@@ -72,7 +72,7 @@ where
     }
 
     fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        reader.is(Test((Integer, '.')))
+        reader.is(Peek((Integer, '.')))
     }
 }
 
