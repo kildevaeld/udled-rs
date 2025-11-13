@@ -5,7 +5,7 @@ use crate::{
     error::Error,
 };
 
-pub struct Cursor<'a, 'input, B> {
+pub(crate) struct Cursor<'a, 'input, B> {
     index: &'a mut usize,
     buffer: &'a B,
     life: PhantomData<&'input ()>,

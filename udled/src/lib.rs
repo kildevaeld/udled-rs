@@ -3,6 +3,7 @@
 extern crate alloc;
 
 mod buffer;
+pub mod bytes;
 mod cursor;
 mod either;
 mod error;
@@ -23,7 +24,6 @@ pub use self::parser::Parser;
 
 pub use self::{
     buffer::{Buffer, BufferItem, StringBuffer},
-    cursor::Cursor,
     either::Either,
     error::*,
     ext::TokenizerExt,

@@ -1,4 +1,4 @@
-use crate::{buffer::IntoBuffer, Buffer, Cursor, Reader, Result, Tokenizer};
+use crate::{buffer::IntoBuffer, cursor::Cursor, Buffer, Reader, Result, Tokenizer};
 
 pub struct Input<B> {
     buffer: B,
@@ -19,7 +19,8 @@ impl<B> Input<B> {
         &self.buffer
     }
 
-    pub fn reader<'this, 'input>(&'this mut self) -> Reader<'this, 'input, B>
+    #[inline(always)]
+    fn reader<'this, 'input>(&'this mut self) -> Reader<'this, 'input, B>
     where
         B: Buffer<'input>,
     {
@@ -33,7 +34,7 @@ impl<B> Input<B> {
         self.reader().is(tokenizer)
     }
 
-    /// Parse a token
+    /// Parse a
     pub fn parse<'input, T: Tokenizer<'input, B>>(&mut self, tokenizer: T) -> Result<T::Token>
     where
         B: Buffer<'input>,

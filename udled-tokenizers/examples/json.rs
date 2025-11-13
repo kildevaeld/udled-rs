@@ -133,7 +133,7 @@ fn main() -> udled::Result<()> {
 
     let mut input = Input::new(JSON);
 
-    let ret = input.reader().parse(value.parser());
+    let ret = input.parse(value.parser());
 
     let array = match ret {
         Ok(ret) => ret,

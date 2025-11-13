@@ -249,7 +249,16 @@ where
     type Token = Item<Vec<T::Token>>;
 
     fn eat(&self, reader: &mut crate::Reader<'_, 'input, B>) -> Result<(), crate::Error> {
-        self.tokenizer.eat(reader)
+        let mut count = 0;
+        loop {
+            self.tokenizer.eat(reader)?;
+            count += 1;
+            if count == self.count as usize {
+                break;
+            }
+        }
+
+        Ok(())
     }
 
     fn peek(&self, reader: &mut crate::Reader<'_, 'input, B>) -> bool {

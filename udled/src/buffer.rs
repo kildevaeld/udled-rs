@@ -4,9 +4,12 @@ pub struct BufferItem<'a, B>
 where
     B: Buffer<'a>,
 {
+    /// Index in buffer
     pub index: usize,
-    pub len: usize,
+
     pub item: B::Item,
+    /// The number of bytes the item represents in the buffer
+    pub len: usize,
 }
 
 pub trait Buffer<'a>: Sized {
@@ -14,8 +17,9 @@ pub trait Buffer<'a>: Sized {
     type Item;
 
     fn source(&self) -> Self::Source;
-
+    /// Number of items in the buffer
     fn len(&self) -> usize;
+    /// Get the item at [idx]
     fn get(&self, idx: usize) -> Option<BufferItem<'a, Self>>;
 }
 
@@ -85,6 +89,14 @@ impl<'a> IntoBuffer<'a> for &'a str {
     type Buffer = StringBuffer<'a>;
     fn into_buffer(self) -> Self::Buffer {
         StringBuffer::new(self)
+    }
+}
+
+impl<'a> IntoBuffer<'a> for StringBuffer<'a> {
+    type Buffer = Self;
+
+    fn into_buffer(self) -> Self::Buffer {
+        self
     }
 }
 
