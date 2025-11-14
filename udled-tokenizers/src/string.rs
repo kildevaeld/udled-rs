@@ -1,7 +1,5 @@
 use alloc::format;
-use udled::{
-    any, AsChar, AsSlice, AsStr, Buffer, Error, Exclude, Item, Reader, Tokenizer, TokenizerExt,
-};
+use udled::{any, AsChar, AsSlice, Buffer, Error, Exclude, Item, Reader, Tokenizer, TokenizerExt};
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Str;

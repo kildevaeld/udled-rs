@@ -1,6 +1,5 @@
-use core::marker::PhantomData;
-
 use byteorder::{BigEndian, ByteOrder, LittleEndian};
+use core::marker::PhantomData;
 
 use crate::{AsBytes, AsSlice, Buffer, Item, Next, Reader, Result, Span, Tokenizer, TokenizerExt};
 
@@ -22,36 +21,44 @@ impl Endian {
     }
 }
 
-pub struct Parse<T, B> {
+pub struct Binary<T, B> {
     parser: PhantomData<fn(B) -> T>,
     byteorder: Endian,
 }
 
-impl<T, B> Parse<T, B> {
-    pub const fn new(byteorder: Endian) -> Parse<T, B> {
-        Parse {
+impl<T, B> Clone for Binary<T, B> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<T, B> Copy for Binary<T, B> {}
+
+impl<T, B> Binary<T, B> {
+    pub const fn new(byteorder: Endian) -> Binary<T, B> {
+        Binary {
             parser: PhantomData,
             byteorder,
         }
     }
 
-    pub const fn native() -> Parse<T, B> {
+    pub const fn native() -> Binary<T, B> {
         Self::new(Endian::native())
     }
 
-    pub const fn lt() -> Parse<T, B> {
+    pub const fn lt() -> Binary<T, B> {
         Self::new(Endian::Lt)
     }
 
-    pub const fn big() -> Parse<T, B> {
+    pub const fn big() -> Binary<T, B> {
         Self::new(Endian::Big)
     }
 }
 
-impl<'input, T, B> Tokenizer<'input, B> for Parse<T, B>
+impl<'input, T, B> Tokenizer<'input, B> for Binary<T, B>
 where
     T: FromBytes<'input, B>,
-    B: Buffer<'input>,
+    B: Buffer<'input, Item = u8>,
 {
     type Token = Item<T>;
 
@@ -76,7 +83,7 @@ where
 
 pub trait FromBytes<'input, B>: Sized
 where
-    B: Buffer<'input>,
+    B: Buffer<'input, Item = u8>,
 {
     fn parse(reader: &mut Reader<'_, 'input, B>, byteorder: Endian) -> Result<Self>;
 
@@ -95,7 +102,7 @@ macro_rules! primitives {
       $(
         impl<'input, B> FromBytes<'input, B> for $ty
         where
-            B: Buffer<'input>,
+            B: Buffer<'input, Item = u8>,
             B::Source: AsSlice<'input>,
             <B::Source as AsSlice<'input>>::Slice: AsBytes<'input>,
         {
@@ -141,7 +148,7 @@ where
 
 impl<'input, B> FromBytes<'input, B> for i8
 where
-    B: Buffer<'input, Item = i8>,
+    B: Buffer<'input, Item = u8>,
 {
     fn parse(reader: &mut Reader<'_, 'input, B>, _byteorder: Endian) -> Result<Self> {
         let item = reader.read()?;
@@ -151,28 +158,28 @@ where
 
 pub trait FromBytessExt<'input, B>: FromBytes<'input, B>
 where
-    B: Buffer<'input>,
+    B: Buffer<'input, Item = u8>,
 {
-    fn byteorder(endian: Endian) -> Parse<Self, B> {
-        Parse::new(endian)
+    fn byteorder(endian: Endian) -> Binary<Self, B> {
+        Binary::new(endian)
     }
 
-    fn lt() -> Parse<Self, B> {
-        Parse::lt()
+    fn lt() -> Binary<Self, B> {
+        Binary::lt()
     }
 
-    fn big() -> Parse<Self, B> {
-        Parse::big()
+    fn big() -> Binary<Self, B> {
+        Binary::big()
     }
 
-    fn native() -> Parse<Self, B> {
-        Parse::native()
+    fn native() -> Binary<Self, B> {
+        Binary::native()
     }
 }
 
 impl<'input, T, B> FromBytessExt<'input, B> for T
 where
     T: FromBytes<'input, B>,
-    B: Buffer<'input>,
+    B: Buffer<'input, Item = u8>,
 {
 }
