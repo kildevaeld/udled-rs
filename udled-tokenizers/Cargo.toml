@@ -9,5 +9,8 @@ repository.workspace = true
 license.workspace = true
 rust-version.workspace = true
 
+readme = "README.md"
+description = "Tokenizers for udled"
+
 [dependencies]
 udled = { path = "../udled", version = "0.6" }

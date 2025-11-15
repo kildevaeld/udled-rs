@@ -9,6 +9,9 @@ repository.workspace = true
 license.workspace = true
 rust-version.workspace = true
 
+readme = "README.md"
+description = "Tokenizer and parser"
+
 [features]
 default = []
 serde = ["dep:serde"]
