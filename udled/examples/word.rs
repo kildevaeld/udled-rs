@@ -1,7 +1,7 @@
 use udled::{
     prelude::*,
     tokenizers::{Alphabetic, AsciiWhiteSpace, Punct},
-    AsChar, AsSlice, Buffer, Error, Input, Item, Reader, Tokenizer,
+    AsChar, AsSlice, Buffer, Input, Item, Reader, Span, Tokenizer,
 };
 
 struct Word;
@@ -14,16 +14,18 @@ where
 {
     type Token = Item<<B::Source as AsSlice<'input>>::Slice>;
 
-    fn to_token<'a>(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
+    fn to_token<'a>(&self, reader: &mut Reader<'_, 'input, B>) -> udled::Result<Self::Token> {
         reader.parse(Alphabetic.many().slice())
     }
 }
 
 fn main() -> udled::Result<()> {
-    let mut input = Input::new("Hello, World!");
+    let mut input = Input::new("Hello,     World!");
 
-    let (greeting, _, _, subject, _) = input.parse((Word, Punct, AsciiWhiteSpace, Word, Punct))?;
+    let (greeting, _, _, subject, _) =
+        input.parse((Word, Punct, AsciiWhiteSpace.many().optional(), Word, Punct))?;
 
+    assert_eq!(greeting.span, Span::new(0, 5));
     assert_eq!(greeting.value, "Hello");
     assert_eq!(subject.value, "World");
 
