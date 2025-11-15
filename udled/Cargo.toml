@@ -17,6 +17,6 @@ binary = ["byteorder"]
 
 
 [dependencies]
-udled-macros = { path = "../udled-macros", optional = true }
+udled-macros = { path = "../udled-macros", version = "0.1", optional = true }
 serde = { version = "1", features = ["derive"], optional = true }
 byteorder = { version = "1", optional = true }
