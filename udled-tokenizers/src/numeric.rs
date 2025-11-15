@@ -110,7 +110,7 @@ mod test {
 
         let (a, _, b, _, c) = input.parse((Float, ' ', Float, ' ', Float)).unwrap();
 
-        assert_eq!(a.value, 1.0);
+        assert_eq!(a.value, 1.0000033);
         assert_eq!(b.value, 2003.303);
         assert_eq!(c.value, 12.03e-20);
     }

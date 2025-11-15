@@ -19,7 +19,8 @@ where
                 '"',
                 ('\\', any!('\\', '\'', '"', 'r', 'n', '0'))
                     .or(Exclude::new('\\'.or('"')))
-                    .until('"'),
+                    .until('"')
+                    .optional(),
                 '"'.map_err(|_, _| format!("Expected unicode string")),
             )
                 .slice(),
@@ -52,5 +53,13 @@ mod test {
         let str = input.parse(Str).unwrap();
         assert_eq!(str.value, r#""Hello, World!""#);
         assert_eq!(str.span, Span::new(0, 15));
+    }
+
+    #[test]
+    fn string_escape() {
+        let mut input = Input::new(r#""Hello, \n World!""#);
+        let str = input.parse(Str).unwrap();
+        assert_eq!(str.value, r#""Hello, \n World!""#);
+        assert_eq!(str.span, Span::new(0, 18));
     }
 }

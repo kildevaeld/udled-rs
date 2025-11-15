@@ -21,8 +21,24 @@ where
             let Some(next) = reader.read()?.as_char() else {
                 return Err(reader.error(self.0.as_ref().to_string()));
             };
-            if token != next {
-                return Err(reader.error(self.0.as_ref().to_string()));
+
+            if token.is_ascii() && next.is_ascii() {
+                if !token.eq_ignore_ascii_case(&next) {
+                    return Err(reader.error(self.0.as_ref().to_string()));
+                }
+            } else {
+                let t = token.to_lowercase();
+                let n = next.to_lowercase();
+
+                if t.len() != n.len() {
+                    return Err(reader.error(self.0.as_ref().to_string()));
+                }
+
+                for (t, n) in t.zip(n) {
+                    if t != n {
+                        return Err(reader.error(self.0.as_ref().to_string()));
+                    }
+                }
             }
         }
 
