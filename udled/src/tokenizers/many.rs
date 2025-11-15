@@ -8,6 +8,7 @@ pub const fn many<T, B>(tokenizer: T) -> Many<T, B> {
     Many::new(tokenizer)
 }
 
+/// Matches one or many of [T]
 pub struct Many<T, B> {
     tokenizer: T,
     buffer: PhantomData<fn(B)>,

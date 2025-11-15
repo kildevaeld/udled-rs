@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
 
 use udled::{
-    AsChar, AsSlice, AsStr, Buffer, Error, Input, Location, Parser, Peek, Reader, Span,
-    TokenizerExt,
+    tokenizers::Peek, AsChar, AsSlice, AsStr, Buffer, Error, Input, IntoTokenizer, Location,
+    Reader, Span, TokenizerExt,
 };
 use udled_tokenizers::{Bool, Float, Integer, Str};
 
@@ -28,14 +28,14 @@ where
     B::Source: AsSlice<'input> + AsStr<'input>,
     <B::Source as AsSlice<'input>>::Slice: AsStr<'input>,
 {
-    let ws = whitespace.parser();
+    let ws = whitespace.into_tokenizer();
 
     let output = reader
         .parse((
             BRACE_OPEN,
             &ws,
             value
-                .parser()
+                .into_tokenizer()
                 .punctuated(Peek((&ws, COMMA, &ws)))
                 .map_ok(|m| m.into_items().collect::<Vec<_>>()),
             &ws,
@@ -62,12 +62,12 @@ where
     B::Source: AsSlice<'input> + AsStr<'input>,
     <B::Source as AsSlice<'input>>::Slice: AsStr<'input>,
 {
-    let ws = whitespace.parser();
+    let ws = whitespace.into_tokenizer();
     reader.eat(BRACKET_OPEN)?;
 
     reader.eat(&ws)?;
 
-    let output = (Str, (&ws, ':', &ws), value.parser())
+    let output = (Str, (&ws, ':', &ws), value.into_tokenizer())
         .punctuated(Peek((&ws, COMMA, &ws)))
         .map_ok(|m| {
             m.into_items()
@@ -91,9 +91,9 @@ where
     <B::Source as AsSlice<'input>>::Slice: AsStr<'input>,
 {
     if reader.is(BRACE_OPEN) {
-        reader.parse(array.parser())
+        reader.parse(array.into_tokenizer())
     } else if reader.is(BRACKET_OPEN) {
-        reader.parse(object.parser())
+        reader.parse(object.into_tokenizer())
     } else if reader.is(Str) {
         let str = reader.parse(Str)?;
         Ok(Value::String(str.value.as_str().into()))
@@ -133,7 +133,7 @@ fn main() -> udled::Result<()> {
 
     let mut input = Input::new(JSON);
 
-    let ret = input.parse(value.parser());
+    let ret = input.parse(value.into_tokenizer());
 
     let array = match ret {
         Ok(ret) => ret,

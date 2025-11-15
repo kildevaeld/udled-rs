@@ -19,6 +19,10 @@ impl Endian {
 
         byteorder
     }
+
+    pub const fn network() -> Endian {
+        Self::Big
+    }
 }
 
 pub struct Binary<T, B> {
@@ -156,7 +160,7 @@ where
     }
 }
 
-pub trait FromBytessExt<'input, B>: FromBytes<'input, B>
+pub trait FromBytesExt<'input, B>: FromBytes<'input, B>
 where
     B: Buffer<'input, Item = u8>,
 {
@@ -177,7 +181,7 @@ where
     }
 }
 
-impl<'input, T, B> FromBytessExt<'input, B> for T
+impl<'input, T, B> FromBytesExt<'input, B> for T
 where
     T: FromBytes<'input, B>,
     B: Buffer<'input, Item = u8>,

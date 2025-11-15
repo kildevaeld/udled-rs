@@ -1,7 +1,7 @@
 use alloc::string::ToString;
 use udled::{
-    opt, AsChar, AsSlice, AsStr, Buffer, Digit, Error, Item, Peek, Reader, Span, Tokenizer,
-    TokenizerExt,
+    tokenizers::{opt, Digit, Peek},
+    AsChar, AsSlice, AsStr, Buffer, Error, Item, Reader, Span, Tokenizer, TokenizerExt,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

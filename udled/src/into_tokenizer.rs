@@ -2,23 +2,23 @@ use core::marker::PhantomData;
 
 use crate::{Buffer, Error, Reader, Tokenizer};
 
-pub trait Parser<'a, B>
+pub trait IntoTokenizer<'a, B>
 where
     B: Buffer<'a>,
 {
     type Tokenizer: Tokenizer<'a, B>;
 
-    fn parser(self) -> Self::Tokenizer;
+    fn into_tokenizer(self) -> Self::Tokenizer;
 }
 
-impl<'a, T, U, B> Parser<'a, B> for T
+impl<'a, T, U, B> IntoTokenizer<'a, B> for T
 where
     T: Fn(&mut Reader<'_, 'a, B>) -> Result<U, Error>,
     B: Buffer<'a>,
 {
     type Tokenizer = Func<T, U>;
 
-    fn parser(self) -> Self::Tokenizer {
+    fn into_tokenizer(self) -> Self::Tokenizer {
         Func(self, PhantomData)
     }
 }

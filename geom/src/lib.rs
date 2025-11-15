@@ -19,38 +19,38 @@ impl ToBytes for f64 {
     }
 }
 
-fn main() -> udled::Result<()> {
-    let mut bytes = [0; 12];
+// fn main() -> udled::Result<()> {
+//     let mut bytes = [0; 12];
 
-    NativeEndian::write_i32(&mut bytes[0..4], 42);
-    NativeEndian::write_f64(&mut bytes[4..], 84.2);
+//     NativeEndian::write_i32(&mut bytes[0..4], 42);
+//     NativeEndian::write_f64(&mut bytes[4..], 84.2);
 
-    let mut input = Input::new(&bytes[..]);
+//     let mut input = Input::new(&bytes[..]);
 
-    let ans = input.parse(i32::native())?;
-    let w = input.parse(f64::native())?;
+//     let ans = input.parse(i32::native())?;
+//     let w = input.parse(f64::native())?;
 
-    let lt = line_string![
-         (x: -21.95156, y: 64.1446),
-        (x: -21.951, y: 64.14479),
-        (x: -21.95044, y: 64.14527),
-        (x: -21.951445, y: 64.145508),
-    ];
+//     let lt = line_string![
+//          (x: -21.95156, y: 64.1446),
+//         (x: -21.951, y: 64.14479),
+//         (x: -21.95044, y: 64.14527),
+//         (x: -21.951445, y: 64.145508),
+//     ];
 
-    let lt = polygon![
-        (x: -111., y: 45.),
-        (x: -111., y: 41.),
-        (x: -104., y: 41.),
-        (x: -104., y: 45.),
-    ];
+//     let lt = polygon![
+//         (x: -111., y: 45.),
+//         (x: -111., y: 41.),
+//         (x: -104., y: 41.),
+//         (x: -104., y: 45.),
+//     ];
 
-    let out = process(&lt, 2030, Endian::Lt);
-    let geo = Input::new(&*out).parse(GeometryParser)?;
+//     let out = process(&lt, 2030, Endian::Lt);
+//     let geo = Input::new(&*out).parse(GeometryParser)?;
 
-    println!("{:?},{:?}", ans, w);
-    println!("{:?}", geo);
-    Ok(())
-}
+//     println!("{:?},{:?}", ans, w);
+//     println!("{:?}", geo);
+//     Ok(())
+// }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Geometry<'a> {

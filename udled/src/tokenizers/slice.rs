@@ -1,4 +1,4 @@
-use crate::{AsSlice, Buffer, Error, Item, Reader, Spanned, Tokenizer};
+use crate::{tokenizers::Spanned, AsSlice, Buffer, Error, Item, Reader, Tokenizer};
 use alloc::fmt;
 use core::marker::PhantomData;
 

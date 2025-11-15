@@ -4,6 +4,7 @@ use alloc::fmt;
 
 use crate::{tokenizers::next::Next, Buffer, Tokenizer};
 
+/// Matches everything but [T]
 pub struct Exclude<T, B> {
     tokenizer: T,
     buffer: PhantomData<fn(B)>,

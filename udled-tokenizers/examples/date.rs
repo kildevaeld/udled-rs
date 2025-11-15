@@ -1,4 +1,8 @@
-use udled::{or, AsChar, Buffer, Digit, Input, Peek, Reader, Tokenizer, TokenizerExt};
+use udled::{
+    prelude::*,
+    tokenizers::{or, Digit, Peek},
+    AsChar, Buffer, Input, Reader, Tokenizer,
+};
 use udled_tokenizers::Integer;
 
 const TWO_DIGITS: (Digit, Digit) = (Digit(10), Digit(10));

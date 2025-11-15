@@ -2,29 +2,29 @@
 
 extern crate alloc;
 
-mod buffer;
-#[cfg(feature = "byteorder")]
+pub mod buffer;
+#[cfg(feature = "binary")]
 pub mod bytes;
 mod cursor;
 mod either;
 mod error;
 mod ext;
 mod input;
+mod into_tokenizer;
 mod item;
 mod location;
 mod macros;
-mod parser;
 mod reader;
 mod span;
 mod tokenizer;
 mod traits;
 
-mod tokenizers;
+pub mod tokenizers;
 
-pub use self::parser::Parser;
+pub use self::into_tokenizer::IntoTokenizer;
 
 pub use self::{
-    buffer::{Buffer, BufferItem, StringBuffer},
+    buffer::{Buffer, BufferItem},
     either::Either,
     error::*,
     ext::TokenizerExt,
@@ -33,8 +33,8 @@ pub use self::{
     location::Location,
     reader::Reader,
     span::*,
-    tokenizer::{Char, IgnoreCase, Not, Peek, Prefix, Tokenizer, EOF},
-    tokenizers::*,
+    tokenizer::{Char, Tokenizer, EOF},
+    tokenizers::Next,
     traits::*,
 };
 
@@ -42,7 +42,7 @@ pub use self::{
 pub use udled_macros::visitor;
 
 pub mod prelude {
-    #[cfg(feature = "byteorder")]
-    pub use super::bytes::FromBytessExt;
+    #[cfg(feature = "binary")]
+    pub use super::bytes::FromBytesExt;
     pub use super::ext::TokenizerExt;
 }

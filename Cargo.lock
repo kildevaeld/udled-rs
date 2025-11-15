@@ -85,6 +85,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "geom"
+version = "0.1.0"
+dependencies = [
+ "byteorder",
+ "geo-traits",
+ "geo-types",
+ "udled",
+]
+
+[[package]]
 name = "ident_case"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -166,8 +176,6 @@ name = "udled"
 version = "0.6.0"
 dependencies = [
  "byteorder",
- "geo-traits",
- "geo-types",
  "serde",
  "udled-macros",
 ]

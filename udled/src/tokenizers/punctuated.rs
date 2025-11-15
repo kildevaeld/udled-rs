@@ -1,6 +1,6 @@
 use alloc::vec::Vec;
 
-use crate::{Buffer, Error, Prefix, Reader, Span, Tokenizer, WithSpan};
+use crate::{tokenizers::Peek, Buffer, Error, Reader, Span, Tokenizer, WithSpan};
 
 #[derive(Debug, Clone, Copy)]
 pub enum PuntuatedItem<T, P> {
@@ -89,7 +89,7 @@ where
         if self.non_empty {
             let item = reader.parse(&self.item)?;
             output.push(PuntuatedItem::Item(item));
-            if reader.is(Prefix(&self.punct, &self.item)) {
+            if reader.is(Peek((&self.punct, &self.item))) {
                 let punct = reader.parse(&self.punct)?;
                 output.push(PuntuatedItem::Punct(punct));
             }
@@ -104,7 +104,7 @@ where
 
             output.push(PuntuatedItem::Item(item));
 
-            if reader.is(Prefix(&self.punct, &self.item)) {
+            if reader.is(Peek((&self.punct, &self.item))) {
                 let punct = reader.parse(&self.punct)?;
                 output.push(PuntuatedItem::Punct(punct));
             }

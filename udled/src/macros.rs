@@ -4,7 +4,7 @@ macro_rules! any {
         $one
     };
     [$first: expr, $($rest: expr),*] => {
-        $crate::Or::new($first, $crate::any!($($rest),*))
+        $crate::tokenizers::Or::new($first, $crate::any!($($rest),*))
     };
 
 }

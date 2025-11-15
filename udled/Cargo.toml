@@ -10,17 +10,13 @@ license.workspace = true
 rust-version.workspace = true
 
 [features]
-default = ["byteorder"]
+default = []
 serde = ["dep:serde"]
 macros = ["udled-macros"]
+binary = ["byteorder"]
 
 
 [dependencies]
 udled-macros = { path = "../udled-macros", optional = true }
 serde = { version = "1", features = ["derive"], optional = true }
 byteorder = { version = "1", optional = true }
-
-
-[dev-dependencies]
-geo-types = { version = "*" }
-geo-traits = { version = "*" }

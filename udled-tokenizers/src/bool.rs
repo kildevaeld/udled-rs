@@ -1,4 +1,4 @@
-use udled::{or, AsChar, AsStr, Buffer, Error, Item, Reader, Tokenizer, TokenizerExt};
+use udled::{tokenizers::or, AsChar, AsStr, Buffer, Error, Item, Reader, Tokenizer, TokenizerExt};
 
 /// Match 'true' or 'false'
 #[derive(Debug, Clone, Copy, Default)]

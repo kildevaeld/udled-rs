@@ -3,8 +3,8 @@ use core::marker::PhantomData;
 use alloc::{boxed::Box, vec::Vec};
 
 use crate::{
-    AsDigits, AsSlice, Buffer, Error, Item, Many, Opt, Or, Puntuated, Reader, Sliced, Span,
-    Spanned, Tokenizer, Until,
+    tokenizers::{AsDigits, Many, Opt, Or, Puntuated, Sliced, Spanned, Until},
+    AsSlice, Buffer, Error, Item, Reader, Span, Tokenizer,
 };
 
 pub trait TokenizerExt<'input, B>: Tokenizer<'input, B>

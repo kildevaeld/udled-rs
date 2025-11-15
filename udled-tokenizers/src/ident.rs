@@ -1,6 +1,7 @@
 use udled::{
-    any, AlphaNumeric, Alphabetic, AsChar, AsSlice, Buffer, Error, Item, Reader, Tokenizer,
-    TokenizerExt,
+    any,
+    tokenizers::{AlphaNumeric, Alphabetic},
+    AsChar, AsSlice, Buffer, Error, Item, Reader, Tokenizer, TokenizerExt,
 };
 
 /// Match a unicode identifier
