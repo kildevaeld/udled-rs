@@ -1,8 +1,3 @@
-# Udled
-
-Udled is a lexer and parser for the rust programming language.
-
-```rust
 use udled::{
     prelude::*,
     tokenizers::{Alphabetic, AsciiWhiteSpace, Punct},
@@ -34,6 +29,3 @@ fn main() -> udled::Result<()> {
 
     Ok(())
 }
-
-
-```

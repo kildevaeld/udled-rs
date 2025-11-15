@@ -1,19 +1,18 @@
-use crate::either::Either;
 use core::fmt;
 
 pub trait WithSpan {
     fn span(&self) -> Span;
 }
 
-impl<L, R> WithSpan for Either<L, R>
+impl<L, R> WithSpan for crate::Either<L, R>
 where
     L: WithSpan,
     R: WithSpan,
 {
     fn span(&self) -> Span {
         match self {
-            Either::Left(m) => m.span(),
-            Either::Right(m) => m.span(),
+            crate::Either::Left(m) => m.span(),
+            crate::Either::Right(m) => m.span(),
         }
     }
 }
@@ -56,8 +55,6 @@ pub struct Span {
 }
 
 impl Span {
-    pub const INVALID: Span = Span::new(0, 0);
-
     pub const fn new(start: usize, end: usize) -> Span {
         Span { start, end }
     }

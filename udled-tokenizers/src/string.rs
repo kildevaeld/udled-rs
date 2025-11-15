@@ -1,54 +1,40 @@
-use udled::{token::Char, Error, Lex, Reader, Span, Tokenizer};
+use alloc::format;
+use udled::{
+    any, tokenizers::Exclude, AsChar, AsSlice, Buffer, Error, Item, Reader, Tokenizer, TokenizerExt,
+};
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Str;
 
-impl Tokenizer for Str {
-    type Token<'a> = Lex<'a>;
-    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
-        let start = reader.parse('"')?;
-
-        let end = loop {
-            if reader.eof() {
-                return Err(reader.error("Unexpected end of input while parsing string literal"));
-            }
-
-            let ch = reader.parse(Char)?;
-
-            if ch == r#"""# {
-                break ch.span;
-            }
-
-            if ch == "\\" {
-                match reader.eat_ch()? {
-                    "\\" | "\'" | "\"" | "t" | "r" | "n" | "0" => {
-                        continue;
-                    }
-                    _ => return Err(reader.error("Unknown escape sequence")),
-                }
-            }
-        };
-
-        let span = start + end;
-
-        let str = if span.len() == 2 {
-            Some("")
-        } else {
-            Span::new(span.start + 1, span.end - 1).slice(reader.source())
-        };
-
-        Ok(Lex::new(str.unwrap(), span))
+impl<'input, B> Tokenizer<'input, B> for Str
+where
+    B: Buffer<'input>,
+    B::Item: AsChar,
+    B::Source: AsSlice<'input>,
+{
+    type Token = Item<<B::Source as AsSlice<'input>>::Slice>;
+    fn to_token<'a>(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
+        reader.parse(
+            (
+                '"',
+                ('\\', any!('\\', '\'', '"', 'r', 'n', '0'))
+                    .or(Exclude::new('\\'.or('"')))
+                    .until('"'),
+                '"'.map_err(|_, _| format!("Expected unicode string")),
+            )
+                .slice(),
+        )
     }
 
-    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
-        reader.peek('"')
+    fn peek<'a>(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
+        reader.is('"')
     }
 }
 
 #[cfg(test)]
 mod test {
 
-    use udled::Input;
+    use udled::{Input, Span};
 
     use super::*;
 
@@ -56,7 +42,7 @@ mod test {
     fn empty_string() {
         let mut input = Input::new(r#""""#);
         let str = input.parse(Str).unwrap();
-        assert_eq!(str.value, "");
+        assert_eq!(str.value, r#""""#);
         assert_eq!(str.span, Span::new(0, 2));
     }
 
@@ -64,7 +50,7 @@ mod test {
     fn string() {
         let mut input = Input::new(r#""Hello, World!""#);
         let str = input.parse(Str).unwrap();
-        assert_eq!(str.value, "Hello, World!");
+        assert_eq!(str.value, r#""Hello, World!""#);
         assert_eq!(str.span, Span::new(0, 15));
     }
 }

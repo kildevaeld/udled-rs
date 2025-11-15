@@ -2,7 +2,8 @@
 
 resolver = "3"
 
-members = ["udled", "udled-macros", "udled-tokenizers"]
+members = ["udled-macros", "udled", "udled-tokenizers", "geom"]
+
 
 [workspace.package]
 edition = "2021"

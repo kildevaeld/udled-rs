@@ -1,35 +1,40 @@
-use udled::{any, token::Or, Either, Error, Item, Reader, Tokenizer};
+use udled::{tokenizers::or, AsChar, AsStr, Buffer, Error, Item, Reader, Tokenizer, TokenizerExt};
 
 /// Match 'true' or 'false'
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Bool;
 
-impl Tokenizer for Bool {
-    type Token<'a> = Item<bool>;
+impl<'input, B> Tokenizer<'input, B> for Bool
+where
+    B: Buffer<'input>,
+    B::Item: AsChar,
+    B::Source: AsStr<'input>,
+{
+    type Token = Item<bool>;
 
-    fn to_token<'a>(&self, reader: &mut Reader<'_, 'a>) -> Result<Self::Token<'a>, Error> {
-        let ret = reader.parse(Or("true", "false"))?;
-
-        let item = match ret {
-            Either::Left(span) => Item::new(true, span),
-            Either::Right(span) => Item::new(false, span),
-        };
+    fn to_token<'a>(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
+        let item = reader
+            .parse(or(
+                "true".map_ok(|m| m.map(|_| true)),
+                "false".map_ok(|m| m.map(|_| false)),
+            ))?
+            .unify();
 
         Ok(item)
     }
 
-    fn eat(&self, reader: &mut Reader<'_, '_>) -> Result<(), Error> {
-        reader.eat(Or("true", "false"))
+    fn eat(&self, reader: &mut Reader<'_, 'input, B>) -> Result<(), Error> {
+        reader.eat(or("true", "false"))
     }
 
-    fn peek<'a>(&self, reader: &mut Reader<'_, '_>) -> Result<bool, Error> {
-        reader.peek(any!("true", "false"))
+    fn peek<'a>(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
+        reader.is(or("true", "false"))
     }
 }
 
 #[cfg(test)]
 mod test {
-    use udled::{token::Ws, Input};
+    use udled::{Input, EOF};
 
     use super::Bool;
 
@@ -37,10 +42,10 @@ mod test {
     fn bool() {
         let mut input = Input::new("true false");
 
-        let (a, _, b) = input.parse((Bool, Ws, Bool)).unwrap();
+        let (a, _, b) = input.parse((Bool, ' ', Bool)).unwrap();
 
         assert_eq!(a.value, true);
         assert_eq!(b.value, false);
-        assert!(input.eos())
+        assert!(input.is(EOF))
     }
 }
