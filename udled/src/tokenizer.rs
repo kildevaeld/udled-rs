@@ -39,6 +39,7 @@ where
     }
 }
 
+/// Match a literal char
 impl<'input, S> Tokenizer<'input, S> for char
 where
     S: Buffer<'input>,
@@ -108,6 +109,7 @@ where
     }
 }
 
+/// Match a char
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Char;
 
@@ -164,7 +166,7 @@ where
         Ok(char)
     }
 }
-
+/// Matches end of feed
 #[derive(Debug, Clone, Copy)]
 pub struct EOF;
 
@@ -236,9 +238,9 @@ macro_rules! tuples {
 
             fn eat(&self, reader: &mut Reader<'_, 'input, B>) -> Result<(), Error> {
                 let ($first, $($rest),+) = self;
-                reader.parse($first)?;
+                reader.eat($first)?;
                 $(
-                    reader.parse($rest)?;
+                    reader.eat($rest)?;
                 )+
                 Ok(())
             }
