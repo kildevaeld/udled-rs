@@ -3,6 +3,7 @@
 extern crate alloc;
 
 mod buffer;
+#[cfg(feature = "byteorder")]
 pub mod bytes;
 mod cursor;
 mod either;
@@ -39,3 +40,9 @@ pub use self::{
 
 #[cfg(feature = "macros")]
 pub use udled_macros::visitor;
+
+pub mod prelude {
+    #[cfg(feature = "byteorder")]
+    pub use super::bytes::FromBytessExt;
+    pub use super::ext::TokenizerExt;
+}
