@@ -1,20 +1,18 @@
 use core::fmt;
 
 use udled::{
-    bytes::{Endian, FromBytes},
-    AsBytes, AsSlice, Buffer, Next, TokenizerExt,
+    bytes::{Endian, FromBytes, FromBytesExt},
+    AsBytes, AsSlice, Buffer,
 };
 
-use crate::util::read_f64;
+use crate::binary::coords::Coord;
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Point<'a> {
-    pub(crate) slice: &'a [u8],
-    pub(crate) endian: Endian,
-}
+#[repr(transparent)]
+pub struct Point<'a>(pub(crate) Coord<'a>);
 
 impl<'a> fmt::Debug for Point<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Point")
             .field("x", &self.x())
             .field("y", &self.y())
@@ -25,11 +23,15 @@ impl<'a> fmt::Debug for Point<'a> {
 impl<'a> Point<'a> {
     pub const SIZE: usize = 16;
     pub fn x(&self) -> f64 {
-        read_f64(self.slice, self.endian)
+        self.0.x()
     }
 
     pub fn y(&self) -> f64 {
-        read_f64(&self.slice[8..], self.endian)
+        self.0.y()
+    }
+
+    pub fn coord(&self) -> Coord<'a> {
+        self.0
     }
 }
 
@@ -40,26 +42,7 @@ where
     <B::Source as AsSlice<'input>>::Slice: AsBytes<'input>,
 {
     fn parse(reader: &mut udled::Reader<'_, 'input, B>, byteorder: Endian) -> udled::Result<Self> {
-        let slice = reader.parse(Next.repeat(Point::SIZE as _).slice())?;
-        Ok(Point {
-            slice: slice.value.as_bytes(),
-            endian: byteorder,
-        })
+        let coord = reader.parse(Coord::byteorder(byteorder))?;
+        Ok(Point(coord.value))
     }
 }
-
-// impl<'input> geozero::GeozeroGeometry for Point<'input> {
-//     fn process_geom<P: geozero::GeomProcessor>(
-//         &self,
-//         processor: &mut P,
-//     ) -> geozero::error::Result<()>
-//     where
-//         Self: Sized,
-//     {
-//         processor.point_begin(0)?;
-//         processor.xy(self.x(), self.y(), 0)?;
-//         processor.point_end(0)?;
-
-//         Ok(())
-//     }
-// }

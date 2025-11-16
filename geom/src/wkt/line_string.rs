@@ -1,15 +1,8 @@
-use byteorder::{BigEndian, LittleEndian};
-use udled::{
-    bytes::Endian, AsBytes, AsChar, AsSlice, AsStr, Buffer, Input, IntoTokenizer, Reader,
-    Tokenizer, TokenizerExt,
-};
-use udled_tokenizers::Float;
+use alloc::boxed::Box;
+use udled::{bytes::Endian, AsBytes, AsChar, Buffer, IntoTokenizer, Reader, TokenizerExt};
 
 use crate::{
-    text::{
-        common::ws,
-        point::{parse_coord, parse_coords},
-    },
+    wkt::{common::ws, point::parse_coords},
     writer::{BinaryWriter, ToBytes},
     GeoType,
 };
@@ -26,8 +19,6 @@ where
     B: Buffer<'input>,
     B::Item: AsChar,
     B::Source: AsBytes<'input>,
-    B::Source: AsSlice<'input>,
-    <B::Source as AsSlice<'input>>::Slice: AsStr<'input>,
 {
     let ws = ws.into_tokenizer();
     let ws_opt = ws.optional();

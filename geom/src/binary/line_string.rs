@@ -5,7 +5,7 @@ use udled::{
     AsBytes, AsSlice, Buffer, Next, TokenizerExt,
 };
 
-use super::point::Point;
+use crate::binary::coords::Coord;
 
 pub type MultiPoint<'a> = LineString<'a>;
 
@@ -17,7 +17,7 @@ pub struct LineString<'a> {
 }
 
 impl<'a> fmt::Debug for LineString<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut v = f.debug_list();
 
         for i in 0..self.len() {
@@ -39,17 +39,39 @@ impl<'a> LineString<'a> {
         self.num as _
     }
 
-    pub fn get(&self, idx: usize) -> Option<Point<'a>> {
+    pub fn get(&self, idx: usize) -> Option<Coord<'a>> {
         if idx >= self.len() {
             return None;
         }
 
-        let buf_idx = idx * Point::SIZE;
+        let buf_idx = idx * Coord::SIZE;
 
-        Some(Point {
-            slice: &self.slice[buf_idx..(buf_idx + Point::SIZE)],
+        Some(Coord {
+            slice: &self.slice[buf_idx..(buf_idx + Coord::SIZE)],
             endian: self.endian,
         })
+    }
+
+    pub fn coords(&self) -> LineStringIter<'a> {
+        LineStringIter {
+            line: *self,
+            idx: 0,
+        }
+    }
+}
+
+pub struct LineStringIter<'a> {
+    line: LineString<'a>,
+    idx: usize,
+}
+
+impl<'a> Iterator for LineStringIter<'a> {
+    type Item = Coord<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let next = self.line.get(self.idx)?;
+        self.idx += 1;
+        Some(next)
     }
 }
 
@@ -61,7 +83,7 @@ where
 {
     fn parse(reader: &mut udled::Reader<'_, 'input, B>, byteorder: Endian) -> udled::Result<Self> {
         let num = reader.parse(u32::byteorder(byteorder))?;
-        let byte_len = (num.value as usize) * Point::SIZE;
+        let byte_len = (num.value as usize) * Coord::SIZE;
         let slice = reader.parse(Next.repeat(byte_len as _).slice())?;
         Ok(LineString {
             slice: slice.value.as_bytes(),

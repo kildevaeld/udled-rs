@@ -10,11 +10,14 @@ license.workspace = true
 rust-version.workspace = true
 
 [features]
+# default = ["proj", "geo-types"]
 geo-types = ["dep:geo-traits"]
+proj = ["dep:proj"]
 
 [dependencies]
 udled = { path = "../udled", features = ["binary"] }
 udled-tokenizers = { path = "../udled-tokenizers" }
+byteorder = { version = "1.5", default-features = false }
 
-geo-traits = { version = "0.3", optional = true }
-byteorder = { version = "1" }
+geo-traits = { version = "0.3", default-features = false, optional = true }
+proj = { version = "0.31", default-features = false, optional = true }

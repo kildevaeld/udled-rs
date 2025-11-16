@@ -1,30 +1,33 @@
-use udled::{bytes::Endian, AsBytes, AsChar, AsSlice, AsStr, Buffer, Input, Tokenizer};
+use alloc::vec::Vec;
+use udled::{bytes::Endian, AsBytes, AsChar, Buffer, Input, Tokenizer};
 use udled_tokenizers::Integer;
 
-use crate::{
-    text::{line_string::parse_line_string, point::parse_point, polygon::parse_polyon},
-    writer::ToBytes,
-    GeomB,
-};
+use crate::{wkt::geometry::parse_geometry, writer::ToBytes, GeomB};
 
+mod collection;
 mod common;
+mod display;
+mod geometry;
 mod line_string;
+mod multi_line_string;
 mod point;
 mod polygon;
 
+pub use self::display::display_geometry;
+
 pub fn parse(input: &str, endian: Endian) -> udled::Result<GeomB> {
-    Input::new(input).parse(Parser).map(GeomB::new)
+    Input::new(input.as_bytes())
+        .parse(Parser(endian))
+        .map(GeomB::new)
 }
 
-pub struct Parser;
+struct Parser(Endian);
 
 impl<'input, B> Tokenizer<'input, B> for Parser
 where
     B: Buffer<'input>,
     B::Item: AsChar,
     B::Source: AsBytes<'input>,
-    B::Source: AsSlice<'input>,
-    <B::Source as AsSlice<'input>>::Slice: AsStr<'input>,
 {
     type Token = Vec<u8>;
 
@@ -34,7 +37,7 @@ where
     ) -> Result<Self::Token, udled::Error> {
         let mut output = Vec::<u8>::default();
 
-        let endian = Endian::native();
+        let endian = self.0;
 
         match endian {
             Endian::Big => {
@@ -51,13 +54,7 @@ where
             .write(&mut output, endian)
             .map_err(|err| reader.error(err))?;
 
-        if reader.is("POINT") {
-            parse_point(reader, &mut output, endian, true)?;
-        } else if reader.is("LINESTRING") {
-            parse_line_string(reader, &mut output, endian, true)?;
-        } else if reader.is("POLYGON") {
-            parse_polyon(reader, &mut output, endian, true)?;
-        }
+        parse_geometry(reader, &mut output, endian)?;
 
         Ok(output)
     }

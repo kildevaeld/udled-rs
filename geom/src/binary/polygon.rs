@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use udled::{
     bytes::{Endian, FromBytes, FromBytesExt},
     AsBytes, AsSlice, Buffer, TokenizerExt,
@@ -19,6 +20,10 @@ impl<'a> Polygon<'a> {
 
     pub fn get(&self, idx: usize) -> Option<&LineString<'a>> {
         self.lines.get(idx)
+    }
+
+    pub fn rings(&self) -> core::slice::Iter<'_, LineString<'a>> {
+        self.lines.iter()
     }
 }
 

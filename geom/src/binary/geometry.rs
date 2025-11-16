@@ -1,11 +1,12 @@
-use std::mem::transmute;
+use core::mem::transmute;
 
+use alloc::fmt;
 use udled::{
     bytes::{Endian, FromBytes, FromBytesExt},
     AsBytes, AsSlice, Buffer, Input, Tokenizer,
 };
 
-use crate::writer::ToBytes;
+use crate::{util::get_endian, writer::ToBytes};
 
 use super::{
     collection::GeometryCollection,
@@ -19,11 +20,20 @@ use super::{
 pub struct Geometry<'a> {
     srid: u32,
     kind: GeoKind<'a>,
+    endian: Endian,
 }
 
 impl<'a> Geometry<'a> {
     pub fn srid(&self) -> u32 {
         self.srid
+    }
+
+    pub fn endian(&self) -> Endian {
+        self.endian
+    }
+
+    pub fn kind(&self) -> &GeoKind<'a> {
+        &self.kind
     }
 
     pub fn from_bytes(bytes: &[u8]) -> udled::Result<Geometry<'_>> {
@@ -49,10 +59,8 @@ where
         &self,
         reader: &mut udled::Reader<'_, 'input, B>,
     ) -> Result<Self::Token, udled::Error> {
-        let endian = match reader.read()? {
-            0 => Endian::Big,
-            1 => Endian::Lt,
-            _ => return Err(reader.error("byteorder")),
+        let Some(endian) = get_endian(reader.read()?) else {
+            return Err(reader.error("byteorder"));
         };
 
         let srid = reader.parse(u32::byteorder(endian))?;
@@ -62,6 +70,7 @@ where
         Ok(Geometry {
             srid: srid.value,
             kind: kind.value,
+            endian,
         })
     }
 }
@@ -76,6 +85,21 @@ pub enum GeoType {
     MultiLineString,
     MultiPolygon,
     Collection,
+}
+
+impl fmt::Display for GeoType {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let s = match self {
+            GeoType::Point => "POINT",
+            GeoType::LineString => "LINESTRING",
+            GeoType::Polygon => "POLYGON",
+            GeoType::MultiPoint => "MULTIPOINT",
+            GeoType::MultiLineString => "MULTILINESTRING",
+            GeoType::MultiPolygon => "MULTIPOLYGON",
+            GeoType::Collection => "GEOMETRYCOLLECTION",
+        };
+        f.write_str(s)
+    }
 }
 
 impl<'input, B> FromBytes<'input, B> for GeoType

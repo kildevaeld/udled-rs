@@ -1,8 +1,12 @@
-use super::{
-    geometry::{GeoKind, GeoType},
-    GeometryCollection, LineString, MultiLineString, MultiPoint, MultiPolygon, Point, Polygon,
+use crate::binary::{
+    GeoKind, GeoType, GeometryCollection, LineString, MultiLineString, MultiPoint, MultiPolygon,
+    Point, Polygon,
 };
-use crate::writer::{BinaryWriter, ToBytes};
+use crate::{
+    writer::{BinaryWriter, ToBytes},
+    Coord,
+};
+use crate::{GeomB, Geometry};
 use geo_traits::{
     CoordTrait, GeometryCollectionTrait, LineStringTrait, MultiLineStringTrait, MultiPointTrait,
     MultiPolygonTrait, PointTrait, PolygonTrait, UnimplementedLine, UnimplementedRect,
@@ -10,9 +14,17 @@ use geo_traits::{
 };
 use udled::bytes::Endian;
 
-pub fn process<T: geo_traits::GeometryTrait<T = f64>, W: BinaryWriter>(
+impl GeomB {
+    pub fn from_geo_type<T: geo_traits::GeometryTrait<T = f64>>(geo: &T, srid: u32) -> GeomB {
+        let mut output = Vec::<u8>::new();
+        process(geo, srid, Endian::native(), &mut output).unwrap();
+        GeomB::new(output)
+    }
+}
+
+fn process<T: geo_traits::GeometryTrait<T = f64>, W: BinaryWriter>(
     geo: &T,
-    srid: i32,
+    srid: u32,
     endian: Endian,
     output: &mut W,
 ) -> Result<(), W::Error> {
@@ -128,7 +140,7 @@ fn process_inner<T: geo_traits::GeometryTrait<T = f64>, W: BinaryWriter>(
     Ok(())
 }
 
-impl<'input> CoordTrait for Point<'input> {
+impl<'input> CoordTrait for Coord<'input> {
     type T = f64;
 
     fn dim(&self) -> geo_traits::Dimensions {
@@ -234,12 +246,12 @@ macro_rules! geo {
 
 impl<'input> geo_traits::PointTrait for Point<'input> {
     type CoordType<'a>
-        = Self
+        = Coord<'a>
     where
         Self: 'a;
 
     fn coord(&self) -> Option<Self::CoordType<'_>> {
-        Some(*self)
+        Some(self.coord())
     }
 }
 
@@ -247,7 +259,7 @@ geo!(Point => Point);
 
 impl<'input> geo_traits::LineStringTrait for LineString<'input> {
     type CoordType<'a>
-        = Point<'a>
+        = Coord<'a>
     where
         Self: 'a;
 
@@ -316,7 +328,7 @@ impl<'input> geo_traits::MultiPointTrait for MultiPoint<'input> {
     }
 
     unsafe fn point_unchecked(&self, i: usize) -> Self::InnerPointType<'_> {
-        self.get(i).unwrap()
+        Point(self.get(i).unwrap())
     }
 }
 
@@ -342,11 +354,11 @@ impl<'input> geo_traits::GeometryCollectionTrait for GeometryCollection<'input> 
         Self: 'a;
 
     fn num_geometries(&self) -> usize {
-        todo!()
+        self.len()
     }
 
     unsafe fn geometry_unchecked(&self, i: usize) -> Self::GeometryType<'_> {
-        todo!()
+        self.get(i).cloned().unwrap()
     }
 }
 
@@ -433,5 +445,81 @@ impl<'input> geo_traits::GeometryTrait for GeoKind<'input> {
             GeoKind::MultiPolygon(mpoly) => geo_traits::GeometryType::MultiPolygon(mpoly),
             GeoKind::Collection(gc) => geo_traits::GeometryType::GeometryCollection(gc),
         }
+    }
+}
+
+impl<'input> geo_traits::GeometryTrait for Geometry<'input> {
+    type T = f64;
+
+    type PointType<'a>
+        = Point<'a>
+    where
+        Self: 'a;
+
+    type LineStringType<'a>
+        = LineString<'a>
+    where
+        Self: 'a;
+
+    type PolygonType<'a>
+        = Polygon<'a>
+    where
+        Self: 'a;
+
+    type MultiPointType<'a>
+        = MultiPoint<'a>
+    where
+        Self: 'a;
+
+    type MultiLineStringType<'a>
+        = MultiLineString<'a>
+    where
+        Self: 'a;
+
+    type MultiPolygonType<'a>
+        = MultiPolygon<'a>
+    where
+        Self: 'a;
+
+    type GeometryCollectionType<'a>
+        = GeometryCollection<'a>
+    where
+        Self: 'a;
+
+    type RectType<'a>
+        = UnimplementedRect<Self::T>
+    where
+        Self: 'a;
+
+    type TriangleType<'a>
+        = UnimplementedTriangle<Self::T>
+    where
+        Self: 'a;
+
+    type LineType<'a>
+        = UnimplementedLine<Self::T>
+    where
+        Self: 'a;
+
+    fn dim(&self) -> geo_traits::Dimensions {
+        geo_traits::Dimensions::Xy
+    }
+
+    fn as_type(
+        &self,
+    ) -> geo_traits::GeometryType<
+        '_,
+        Self::PointType<'_>,
+        Self::LineStringType<'_>,
+        Self::PolygonType<'_>,
+        Self::MultiPointType<'_>,
+        Self::MultiLineStringType<'_>,
+        Self::MultiPolygonType<'_>,
+        Self::GeometryCollectionType<'_>,
+        Self::RectType<'_>,
+        Self::TriangleType<'_>,
+        Self::LineType<'_>,
+    > {
+        self.kind().as_type()
     }
 }

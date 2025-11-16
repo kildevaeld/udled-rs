@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use udled::{
     bytes::{Endian, FromBytes, FromBytesExt},
     AsBytes, AsSlice, Buffer, TokenizerExt,
@@ -17,6 +18,10 @@ impl<'a> MultiPolygon<'a> {
 
     pub fn get(&self, idx: usize) -> Option<&Polygon<'a>> {
         self.lines.get(idx)
+    }
+
+    pub fn polygons(&self) -> core::slice::Iter<'_, Polygon<'a>> {
+        self.lines.iter()
     }
 }
 

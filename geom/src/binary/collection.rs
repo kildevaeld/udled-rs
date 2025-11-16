@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use udled::{
     bytes::{Endian, FromBytes, FromBytesExt},
     AsBytes, AsSlice, Buffer, TokenizerExt,
@@ -17,6 +18,10 @@ impl<'a> GeometryCollection<'a> {
 
     pub fn get(&self, idx: usize) -> Option<&GeoKind<'a>> {
         self.lines.get(idx)
+    }
+
+    pub fn shapes(&self) -> core::slice::Iter<'_, GeoKind<'a>> {
+        self.lines.iter()
     }
 }
 

@@ -1,7 +1,7 @@
 use alloc::string::ToString;
 use udled::{
     tokenizers::{opt, Digit, Peek},
-    AsChar, AsSlice, AsStr, Buffer, Error, Item, Reader, Span, Tokenizer, TokenizerExt,
+    AsBytes, AsChar, AsSlice, AsStr, Buffer, Error, Item, Reader, Span, Tokenizer, TokenizerExt,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -46,29 +46,30 @@ impl<'input, B> Tokenizer<'input, B> for Float
 where
     B: Buffer<'input>,
     B::Item: AsChar,
-    B::Source: AsSlice<'input>,
-    <B::Source as AsSlice<'input>>::Slice: AsStr<'input>,
+    B::Source: AsBytes<'input>,
 {
     type Token = Item<f64>;
 
     fn to_token<'a>(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
-        let slice = reader.parse(
+        let span = reader.parse(
             (
                 Integer,
                 '.',
                 Digit(10).many(),
                 ('e'.or('E'), opt('-'), Digit(10).many()).optional(),
             )
-                .slice(),
+                .spanned(),
         )?;
 
-        let float: f64 = slice
-            .value
-            .as_str()
+        let string = reader.buffer().source().as_bytes();
+        let string = unsafe { core::str::from_utf8_unchecked(string) };
+        let string = span.slice(string).unwrap();
+
+        let float: f64 = string
             .parse()
             .map_err(|err: core::num::ParseFloatError| reader.error(err.to_string()))?;
 
-        Ok(Item::new(slice.span, float))
+        Ok(Item::new(span, float))
     }
 
     fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {

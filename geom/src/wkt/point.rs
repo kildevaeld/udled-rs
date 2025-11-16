@@ -1,12 +1,10 @@
+use alloc::boxed::Box;
 use byteorder::{BigEndian, LittleEndian};
-use udled::{
-    bytes::Endian, AsBytes, AsChar, AsSlice, AsStr, Buffer, Input, IntoTokenizer, Reader,
-    Tokenizer, TokenizerExt,
-};
+use udled::{bytes::Endian, AsBytes, AsChar, Buffer, IntoTokenizer, Reader, TokenizerExt};
 use udled_tokenizers::Float;
 
 use crate::{
-    text::common::ws,
+    wkt::common::ws,
     writer::{BinaryWriter, ToBytes},
     GeoType,
 };
@@ -23,8 +21,6 @@ where
     B: Buffer<'input>,
     B::Item: AsChar,
     B::Source: AsBytes<'input>,
-    B::Source: AsSlice<'input>,
-    <B::Source as AsSlice<'input>>::Slice: AsStr<'input>,
 {
     let ws = ws.into_tokenizer();
     let ws_opt = ws.optional();
@@ -56,11 +52,8 @@ where
     B: Buffer<'input>,
     B::Item: AsChar,
     B::Source: AsBytes<'input>,
-    B::Source: AsSlice<'input>,
-    <B::Source as AsSlice<'input>>::Slice: AsStr<'input>,
 {
     let ws = ws.into_tokenizer();
-    let ws_opt = ws.optional();
 
     let (x, y) = input.parse((Float, &ws, Float).map_ok(|(x, _, y)| (x.value, y.value)))?;
 
@@ -81,8 +74,6 @@ where
     B: Buffer<'input>,
     B::Item: AsChar,
     B::Source: AsBytes<'input>,
-    B::Source: AsSlice<'input>,
-    <B::Source as AsSlice<'input>>::Slice: AsStr<'input>,
 {
     let ws = ws.into_tokenizer();
     let ws_opt = ws.optional();

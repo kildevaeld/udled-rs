@@ -1,6 +1,7 @@
-use std::convert::Infallible;
+use core::convert::Infallible;
 
-use byteorder::{BigEndian, ByteOrder, LittleEndian, NativeEndian};
+use alloc::vec::Vec;
+use byteorder::{BigEndian, ByteOrder, LittleEndian};
 use udled::bytes::Endian;
 
 pub trait ToBytes {
