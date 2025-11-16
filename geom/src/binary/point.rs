@@ -48,18 +48,18 @@ where
     }
 }
 
-impl<'input> geozero::GeozeroGeometry for Point<'input> {
-    fn process_geom<P: geozero::GeomProcessor>(
-        &self,
-        processor: &mut P,
-    ) -> geozero::error::Result<()>
-    where
-        Self: Sized,
-    {
-        processor.point_begin(0)?;
-        processor.xy(self.x(), self.y(), 0)?;
-        processor.point_end(0)?;
+// impl<'input> geozero::GeozeroGeometry for Point<'input> {
+//     fn process_geom<P: geozero::GeomProcessor>(
+//         &self,
+//         processor: &mut P,
+//     ) -> geozero::error::Result<()>
+//     where
+//         Self: Sized,
+//     {
+//         processor.point_begin(0)?;
+//         processor.xy(self.x(), self.y(), 0)?;
+//         processor.point_end(0)?;
 
-        Ok(())
-    }
-}
+//         Ok(())
+//     }
+// }

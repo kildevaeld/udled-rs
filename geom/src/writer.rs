@@ -17,6 +17,7 @@ macro_rules! primitives {
                         Endian::Lt => bytes.$method::<LittleEndian>(*self),
                     }
                 }
+
             }
         )*
     };
@@ -33,7 +34,12 @@ primitives!(
 
 pub trait BinaryWriter {
     type Error;
+
+    fn position(&self) -> usize;
+
     fn write_all(&mut self, bytes: &[u8]) -> Result<(), Self::Error>;
+
+    fn write_all_at(&mut self, bytes: &[u8], idx: usize) -> Result<(), Self::Error>;
 
     fn write_u8(&mut self, n: u8) -> Result<(), Self::Error> {
         self.write_all(&[n])
@@ -59,6 +65,12 @@ pub trait BinaryWriter {
         let mut v = [0; 4];
         T::write_u32(&mut v, n);
         self.write_all(&v)
+    }
+
+    fn write_u32_at<T: ByteOrder>(&mut self, idx: usize, n: u32) -> Result<(), Self::Error> {
+        let mut v = [0; 4];
+        T::write_u32(&mut v, n);
+        self.write_all_at(&v, idx)
     }
 
     fn write_i32<T: ByteOrder>(&mut self, n: i32) -> Result<(), Self::Error> {
@@ -94,8 +106,17 @@ pub trait BinaryWriter {
 
 impl BinaryWriter for Vec<u8> {
     type Error = Infallible;
+
+    fn position(&self) -> usize {
+        self.len()
+    }
     fn write_all(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {
         self.extend_from_slice(bytes);
+        Ok(())
+    }
+
+    fn write_all_at(&mut self, bytes: &[u8], idx: usize) -> Result<(), Self::Error> {
+        self[idx..(idx + bytes.len())].copy_from_slice(bytes);
         Ok(())
     }
 }

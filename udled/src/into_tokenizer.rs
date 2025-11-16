@@ -31,6 +31,17 @@ impl<T, U> Func<T, U> {
     }
 }
 
+impl<T, U> Clone for Func<T, U>
+where
+    T: Clone,
+{
+    fn clone(&self) -> Self {
+        Func(self.0.clone(), PhantomData)
+    }
+}
+
+impl<T, U> Copy for Func<T, U> where T: Copy {}
+
 impl<'input, T, U, B> Tokenizer<'input, B> for Func<T, U>
 where
     B: Buffer<'input>,
