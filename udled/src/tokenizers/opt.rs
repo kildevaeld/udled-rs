@@ -62,7 +62,7 @@ where
 
     fn eat(&self, reader: &mut Reader<'_, 'input, B>) -> Result<(), Error> {
         if reader.is(&self.tokenizer) {
-            reader.parse(&self.tokenizer)?;
+            reader.eat(&self.tokenizer)?;
         }
         Ok(())
     }
