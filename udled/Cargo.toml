@@ -1,6 +1,6 @@
 [package]
 name = "udled"
-version = "0.6.1"
+version = "0.6.2"
 edition.workspace = true
 keywords.workspace = true
 categories.workspace = true

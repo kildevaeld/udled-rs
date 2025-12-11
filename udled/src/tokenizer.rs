@@ -1,7 +1,7 @@
 use alloc::{format, string::ToString};
 
 use crate::{
-    buffer::Buffer, error::Error, item::Item, reader::Reader, span::Span, AsBytes, AsChar,
+    buffer::Buffer, error::Error, item::Item, reader::Reader, span::Span, AsBytes, AsChar, Either,
 };
 
 pub trait Tokenizer<'input, B: Buffer<'input>> {
@@ -166,6 +166,37 @@ where
         Ok(char)
     }
 }
+
+impl<'input, L, R, B> Tokenizer<'input, B> for Either<L, R>
+where
+    L: Tokenizer<'input, B>,
+    R: Tokenizer<'input, B>,
+    B: Buffer<'input>,
+{
+    type Token = Either<L::Token, R::Token>;
+
+    fn to_token(&self, reader: &mut Reader<'_, 'input, B>) -> Result<Self::Token, Error> {
+        match self {
+            Self::Left(e) => Ok(Either::Left(e.to_token(reader)?)),
+            Self::Right(e) => Ok(Either::Right(e.to_token(reader)?)),
+        }
+    }
+
+    fn eat(&self, reader: &mut Reader<'_, 'input, B>) -> Result<(), Error> {
+        match self {
+            Self::Left(e) => Ok(e.eat(reader)?),
+            Self::Right(e) => Ok(e.eat(reader)?),
+        }
+    }
+
+    fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
+        match self {
+            Self::Left(e) => e.peek(reader),
+            Self::Right(e) => e.peek(reader),
+        }
+    }
+}
+
 /// Matches end of feed
 #[derive(Debug, Clone, Copy)]
 pub struct EOF;
